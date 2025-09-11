@@ -140,7 +140,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center">
           <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
             <CardContent className="p-12">
-              <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+              <h2 className="text-3xl font-bold mb-4">Ready to Get Started? </h2>
               <p className="text-xl mb-8 text-blue-100">
                 Join thousands of students already using EventSphere to enhance their college experience.
               </p>
