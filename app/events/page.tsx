@@ -6,7 +6,7 @@ import { EventFilters, type EventFilters as EventFiltersType } from "@/component
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, Calendar, Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import type { Event } from "@/lib/models/Event"
 
 interface EventsResponse {
@@ -38,6 +38,8 @@ export default function EventsPage() {
   })
   const [userRole, setUserRole] = useState<string>("")
   const router = useRouter()
+  const searchParams = useSearchParams();
+  const selectedCategory = searchParams.get("category") || "all";
 
   const fetchEvents = async (page = 1) => {
     setLoading(true)
@@ -46,7 +48,7 @@ export default function EventsPage() {
         page: page.toString(),
         limit: pagination.limit.toString(),
         ...(filters.search && { search: filters.search }),
-        ...(filters.category !== "all" && { category: filters.category }),
+        ...(selectedCategory !== "all" && { category: selectedCategory }),
         ...(filters.department !== "all" && { department: filters.department }),
         ...(filters.status !== "all" && { status: filters.status }),
         sortBy: filters.sortBy,
@@ -85,7 +87,7 @@ export default function EventsPage() {
 
   useEffect(() => {
     fetchEvents(1)
-  }, [filters])
+  }, [filters, selectedCategory])
 
   const handleFiltersChange = (newFilters: EventFiltersType) => {
     setFilters(newFilters)

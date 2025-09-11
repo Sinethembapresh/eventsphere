@@ -41,51 +41,59 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <Calendar className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                <CardTitle>Event Discovery</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Browse and discover upcoming events across all departments and categories.
-                </CardDescription>
-              </CardContent>
-            </Card>
+            <Link href="/events/past" className="hover:no-underline">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <Calendar className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                  <CardTitle>Past Events</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Browse and discover past events from all departments and categories.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <Users className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <CardTitle>Easy Registration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Register for events with just a few clicks and manage your participation.
-                </CardDescription>
-              </CardContent>
-            </Card>
+            <Link href="/events/register" className="hover:no-underline">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <Users className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <CardTitle>Easy Registration</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Register for events with just a few clicks and manage your participation.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <Trophy className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-                <CardTitle>Certificates</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Earn and download certificates for your participation and achievements.
-                </CardDescription>
-              </CardContent>
-            </Card>
+            <Link href="/events/certificates" className="hover:no-underline">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <Trophy className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+                  <CardTitle>Certificates</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Earn and download certificates for your participation and achievements.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <BookOpen className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                <CardTitle>Event Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>Organize and manage events with comprehensive tools for organizers.</CardDescription>
-              </CardContent>
-            </Card>
+            <Link href="/events/manage" className="hover:no-underline">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <BookOpen className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                  <CardTitle>Event Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>Organize and manage events with comprehensive tools for organizers.</CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
       </section>
@@ -102,24 +110,26 @@ export default function HomePage() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
-              { name: "Technical", color: "bg-purple-100 text-purple-800", count: "25+" },
-              { name: "Cultural", color: "bg-pink-100 text-pink-800", count: "30+" },
-              { name: "Sports", color: "bg-orange-100 text-orange-800", count: "20+" },
-              { name: "Academic", color: "bg-blue-100 text-blue-800", count: "15+" },
-              { name: "Social", color: "bg-green-100 text-green-800", count: "10+" },
-              { name: "Career", color: "bg-indigo-100 text-indigo-800", count: "12+" },
+              { name: "Technical", color: "bg-purple-100 text-purple-800", count: "25+", path: "technical" },
+              { name: "Cultural", color: "bg-pink-100 text-pink-800", count: "30+", path: "cultural" },
+              { name: "Sports", color: "bg-orange-100 text-orange-800", count: "20+", path: "sports" },
+              { name: "Academic", color: "bg-blue-100 text-blue-800", count: "15+", path: "academic" },
+              { name: "Social", color: "bg-green-100 text-green-800", count: "10+", path: "social" },
+              { name: "Career", color: "bg-indigo-100 text-indigo-800", count: "12+", path: "career" },
             ].map((category) => (
-              <Card key={category.name} className="text-center hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-6">
-                  <div
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${category.color} mb-2`}
-                  >
-                    {category.name}
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900">{category.count}</p>
-                  <p className="text-sm text-gray-600">Events</p>
-                </CardContent>
-              </Card>
+              <Link key={category.name} href={`/events/${category.path}`} className="hover:no-underline">
+                <Card className="text-center hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-6">
+                    <div
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${category.color} mb-2`}
+                    >
+                      {category.name}
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">{category.count}</p>
+                    <p className="text-sm text-gray-600">Events</p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
