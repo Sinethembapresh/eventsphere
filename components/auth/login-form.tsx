@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import axiosInstance from "../../app/api/axiosInstance"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 
 export function LoginForm() {
   const [formData, setFormData] = useState({
-    email: "",
+    userEmail: "",
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
@@ -21,46 +21,46 @@ export function LoginForm() {
   const [error, setError] = useState("")
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setIsLoading(true)
+  setError("")
 
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
+  try {
+    const response = await axiosInstance.post("/auth/login", {
+      userEmail: formData.userEmail, // 👈 match backend
+      password: formData.password,
+    })
 
-      const data = await response.json()
+    const { success, data, message } = response.data
 
-      if (response.ok) {
-        // Redirect based on user role
-        switch (data.user.role) {
-          case "admin":
-            router.push("/admin/dashboard")
-            break
-          case "organizer":
-            router.push("/organizer/dashboard")
-            break
-          case "participant":
-            router.push("/dashboard")
-            break
-          default:
-            router.push("/events")
-        }
-      } else {
-        setError(data.error || "Login failed")
+    if (success) {
+      // Store token
+      localStorage.setItem("token", data.accessToken)
+
+      // Redirect based on user role
+      switch (data.user.role) {
+        case "admin":
+          router.push("/admin/dashboard")
+          break
+        case "organizer":
+          router.push("/organizer/dashboard")
+          break
+        case "participant":
+          router.push("/dashboard")
+          break
+        default:
+          router.push("/events")
       }
-    } catch (error) {
-      setError("Network error. Please try again.")
-    } finally {
-      setIsLoading(false)
+    } else {
+      setError(message || "Login failed")
     }
+  } catch (error: any) {
+    setError(error.response?.data?.message || "Network error. Please try again.")
+  } finally {
+    setIsLoading(false)
   }
+}
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -73,7 +73,7 @@ export function LoginForm() {
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-        <CardDescription>Sign in to your EventSphere account now</CardDescription>
+        <CardDescription>Sign in to your EventSphere account</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,13 +84,13 @@ export function LoginForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="userEmail">Email</Label>
             <Input
-              id="email"
-              name="email"
+              id="userEmail"
+              name="userEmail"
               type="email"
               placeholder="your.email@college.edu"
-              value={formData.email}
+              value={formData.userEmail}
               onChange={handleChange}
               required
               disabled={isLoading}
@@ -137,7 +137,11 @@ export function LoginForm() {
 
         <div className="mt-6 text-center text-sm">
           <span className="text-muted-foreground">Don't have an account? </span>
-          <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => router.push("/auth/register")}>
+          <Button
+            variant="link"
+            className="p-0 h-auto font-semibold"
+            onClick={() => router.push("/auth/register")}
+          >
             Sign up here
           </Button>
         </div>

@@ -28,6 +28,7 @@ export default function OrganizerDashboard() {
     averageRating: 0,
   })
   const [recentEvents, setRecentEvents] = useState<(Event & { _id: string })[]>([])
+  const [pendingList, setPendingList] = useState<(Event & { _id: string })[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -35,11 +36,21 @@ export default function OrganizerDashboard() {
     fetchData()
   }, [])
 
+  const authHeaders = () => {
+    const headers: Record<string, string> = {}
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token")
+      if (token) headers["Authorization"] = `Bearer ${token}`
+    }
+    return headers
+  }
+
   const fetchData = async () => {
     try {
-      const [statsResponse, eventsResponse] = await Promise.all([
-        fetch("/api/dashboard/stats"),
-        fetch("/api/dashboard/events?limit=5"),
+      const [statsResponse, eventsResponse, pendingResponse] = await Promise.all([
+        fetch("/api/dashboard/stats", { headers: authHeaders(), credentials: "include" }),
+        fetch("/api/dashboard/events?limit=5", { headers: authHeaders(), credentials: "include" }),
+        fetch("/api/dashboard/events?type=pending&limit=5", { headers: authHeaders(), credentials: "include" }),
       ])
 
       if (statsResponse.ok) {
@@ -50,6 +61,11 @@ export default function OrganizerDashboard() {
       if (eventsResponse.ok) {
         const eventsData = await eventsResponse.json()
         setRecentEvents(eventsData.events)
+      }
+
+      if (pendingResponse.ok) {
+        const pendingData = await pendingResponse.json()
+        setPendingList(pendingData.events)
       }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error)
@@ -232,47 +248,29 @@ export default function OrganizerDashboard() {
               </CardContent>
             </Card>
 
-            {/* Performance Summary */}
+            {/* Unapproved (Pending) Events */}
             <Card>
               <CardHeader>
-                <CardTitle>Performance Summary</CardTitle>
+                <CardTitle>Unapproved Events</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Total Registrations</span>
-                  <span className="font-medium">{stats.totalRegistrations}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Completed Events</span>
-                  <span className="font-medium">{stats.completedEvents}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Success Rate</span>
-                  <span className="font-medium">
-                    {stats.totalEvents > 0 ? Math.round((stats.completedEvents / stats.totalEvents) * 100) : 0}%
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Tips */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tips for Success</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-start gap-2">
-                  <div className="h-2 w-2 bg-blue-500 rounded-full mt-2"></div>
-                  <p className="text-gray-600">Add detailed descriptions to attract more participants</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className="h-2 w-2 bg-green-500 rounded-full mt-2"></div>
-                  <p className="text-gray-600">Set registration deadlines to create urgency</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className="h-2 w-2 bg-purple-500 rounded-full mt-2"></div>
-                  <p className="text-gray-600">Upload event photos to increase engagement</p>
-                </div>
+              <CardContent>
+                {pendingList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No pending events.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingList.map((event) => (
+                      <div key={event._id} className="border rounded-md p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">{event.title}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(event.date)} • {event.venue}</p>
+                          </div>
+                          <Badge className={getStatusColor(event.status)} variant="secondary">{event.status}</Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

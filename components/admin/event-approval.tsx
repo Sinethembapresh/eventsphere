@@ -6,39 +6,68 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, Eye } from "lucide-react"
+import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, Eye, Filter } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/models/Event"
+import { Input } from "@/components/ui/input"
 
 export function EventApproval() {
   const [pendingEvents, setPendingEvents] = useState<(Event & { _id: string })[]>([])
+  const [allEvents, setAllEvents] = useState<(Event & { _id: string })[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<(Event & { _id: string }) | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState("")
   const [approvalMessage, setApprovalMessage] = useState("")
+  const [search, setSearch] = useState("")
+  const [status, setStatus] = useState("all")
   const { toast } = useToast()
+
+  const authHeaders = () => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token")
+      if (token) headers["Authorization"] = `Bearer ${token}`
+    }
+    return headers
+  }
 
   useEffect(() => {
     fetchPendingEvents()
+    fetchAllEvents()
   }, [])
 
   const fetchPendingEvents = async () => {
     setLoading(true)
     try {
-      const response = await fetch("/api/admin/events/pending")
+      const response = await fetch("/api/admin/events/pending", { headers: authHeaders(), credentials: "include" })
       if (response.ok) {
         const data = await response.json()
         setPendingEvents(data.events)
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch pending events",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Failed to fetch pending events", variant: "destructive" })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAllEvents = async (opts?: { status?: string; search?: string }) => {
+    try {
+      const params = new URLSearchParams()
+      if (opts?.status && opts.status !== "all") params.set("status", opts.status)
+      if (opts?.search) params.set("search", opts.search)
+      params.set("limit", "50")
+      const response = await fetch(`/api/admin/events?${params.toString()}`, {
+        headers: authHeaders(),
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAllEvents(data.events)
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to fetch events", variant: "destructive" })
     }
   }
 
@@ -47,26 +76,21 @@ export function EventApproval() {
     try {
       const response = await fetch(`/api/admin/events/${eventId}/approve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
+        credentials: "include",
         body: JSON.stringify({ message: approvalMessage }),
       })
 
       if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Event approved successfully",
-        })
+        toast({ title: "Success", description: "Event approved successfully" })
         setApprovalMessage("")
         fetchPendingEvents()
+        fetchAllEvents({ status, search })
       } else {
         throw new Error("Failed to approve event")
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to approve event",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Failed to approve event", variant: "destructive" })
     } finally {
       setActionLoading(null)
     }
@@ -74,11 +98,7 @@ export function EventApproval() {
 
   const handleReject = async (eventId: string) => {
     if (!rejectReason.trim()) {
-      toast({
-        title: "Error",
-        description: "Please provide a reason for rejection",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Please provide a reason for rejection", variant: "destructive" })
       return
     }
 
@@ -86,26 +106,21 @@ export function EventApproval() {
     try {
       const response = await fetch(`/api/admin/events/${eventId}/reject`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
+        credentials: "include",
         body: JSON.stringify({ reason: rejectReason }),
       })
 
       if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Event rejected successfully",
-        })
+        toast({ title: "Success", description: "Event rejected successfully" })
         setRejectReason("")
         fetchPendingEvents()
+        fetchAllEvents({ status, search })
       } else {
         throw new Error("Failed to reject event")
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to reject event",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Failed to reject event", variant: "destructive" })
     } finally {
       setActionLoading(null)
     }
@@ -147,7 +162,8 @@ export function EventApproval() {
         <p className="text-sm text-muted-foreground">Review and approve events submitted by organizers</p>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="space-y-8">
+        {/* Pending queue */}
         {loading ? (
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
@@ -213,7 +229,6 @@ export function EventApproval() {
                           <h4 className="font-medium mb-2">Description</h4>
                           <p className="text-sm text-muted-foreground">{event.description}</p>
                         </div>
-
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <h4 className="font-medium mb-1">Event Details</h4>
@@ -225,7 +240,6 @@ export function EventApproval() {
                               <p>Department: {event.department}</p>
                             </div>
                           </div>
-
                           <div>
                             <h4 className="font-medium mb-1">Organizer</h4>
                             <div className="space-y-1 text-sm">
@@ -235,17 +249,6 @@ export function EventApproval() {
                             </div>
                           </div>
                         </div>
-
-                        {event.requirements && event.requirements.length > 0 && (
-                          <div>
-                            <h4 className="font-medium mb-2">Requirements</h4>
-                            <ul className="list-disc list-inside text-sm text-muted-foreground">
-                              {event.requirements.map((req, index) => (
-                                <li key={index}>{req}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -262,14 +265,8 @@ export function EventApproval() {
                         <DialogTitle>Approve Event</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                          Are you sure you want to approve "{event.title}"?
-                        </p>
-                        <Textarea
-                          placeholder="Optional approval message for the organizer..."
-                          value={approvalMessage}
-                          onChange={(e) => setApprovalMessage(e.target.value)}
-                        />
+                        <p className="text-sm text-muted-foreground">Are you sure you want to approve "{event.title}"?</p>
+                        <Textarea placeholder="Optional approval message for the organizer..." value={approvalMessage} onChange={(e) => setApprovalMessage(e.target.value)} />
                         <div className="flex justify-end gap-2">
                           <Button onClick={() => handleApprove(event._id)} disabled={actionLoading === event._id}>
                             Approve Event
@@ -291,21 +288,10 @@ export function EventApproval() {
                         <DialogTitle>Reject Event</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                          Please provide a reason for rejecting "{event.title}":
-                        </p>
-                        <Textarea
-                          placeholder="Reason for rejection (required)..."
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          required
-                        />
+                        <p className="text-sm text-muted-foreground">Please provide a reason for rejecting "{event.title}":</p>
+                        <Textarea placeholder="Reason for rejection (required)..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} required />
                         <div className="flex justify-end gap-2">
-                          <Button
-                            variant="destructive"
-                            onClick={() => handleReject(event._id)}
-                            disabled={actionLoading === event._id || !rejectReason.trim()}
-                          >
+                          <Button variant="destructive" onClick={() => handleReject(event._id)} disabled={actionLoading === event._id || !rejectReason.trim()}>
                             Reject Event
                           </Button>
                         </div>
@@ -317,6 +303,37 @@ export function EventApproval() {
             ))}
           </div>
         )}
+
+        {/* All events list with filters */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Input placeholder="Search events..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <select className="border rounded px-2 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="all">All</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
+              <option value="completed">Completed</option>
+            </select>
+            <Button variant="outline" onClick={() => fetchAllEvents({ status, search })}>
+              <Filter className="h-4 w-4 mr-2" /> Apply
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {allEvents.map((event) => (
+              <Card key={event._id}>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-base">{event.title}</CardTitle>
+                  <Badge>{event.status}</Badge>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground space-y-1">
+                  <div>{formatDate(event.date)} @ {event.venue}</div>
+                  <div>Organizer: {event.organizerName}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
