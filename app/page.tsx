@@ -201,7 +201,7 @@ export default function HomePage() {
         className="py-20 px-4 sm:px-8 lg:px-16 relative"
         style={{
           backgroundImage:
-            "url(https://www.l-acoustics.com/wp-content/uploads/2024/02/la-ldlc-arena-3-1024x683.jpg)",
+            "url(https://images.stockcake.com/public/a/0/2/a020c87f-2bd8-4153-889b-fd4be3f9413b_large/neon-concert-crowd-stockcake.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",

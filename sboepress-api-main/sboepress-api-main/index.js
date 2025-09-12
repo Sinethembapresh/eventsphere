@@ -4,7 +4,19 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-dotenv.config();
+const path = require("path");
+
+// Configure dotenv with the correct path
+dotenv.config({
+  path: path.resolve(__dirname, "../../.env"),
+  debug: true,
+});
+
+// Add debug logging
+console.log("Environment variables loaded:", {
+  MONGODB_URI: process.env.MONGODB_URI,
+  NODE_ENV: process.env.NODE_ENV,
+});
 
 const rateLimit = require("express-rate-limit");
 const morgan = require("morgan");
@@ -17,7 +29,6 @@ const Media = require("./models/MediaGallery.js");
 
 // MoMo Collection Routes
 
-
 // Auth & Admin Routes
 const authRoutes = require("./routes/auth-routes/index.js");
 const adminRoutes = require("./routes/admin-routes/admin.js");
@@ -26,7 +37,12 @@ const eventRoutes = require("./routes/events.js"); // Add this line
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error("❌ MONGODB_URI is not defined in environment variables");
+  process.exit(1);
+}
 
 // Middleware
 app.use(
@@ -52,12 +68,12 @@ app.use(globalLimiter);
 
 // Connect to MongoDB
 mongoose
-  .connect(MONGO_URI)
+  .connect(MONGODB_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((e) => console.error("❌ MongoDB error:", e));
 
 // MoMo Collection Routes
-       // Create API user
+// Create API user
 
 // Auth and Admin Routes
 app.use("/auth", authRoutes);
