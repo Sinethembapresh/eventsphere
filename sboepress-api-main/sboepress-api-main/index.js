@@ -4,7 +4,19 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-dotenv.config();
+const path = require("path");
+
+// Configure dotenv with the correct path
+dotenv.config({
+  path: path.resolve(__dirname, "../../.env"),
+  debug: true,
+});
+
+// Add debug logging
+console.log("Environment variables loaded:", {
+  MONGODB_URI: process.env.MONGODB_URI,
+  NODE_ENV: process.env.NODE_ENV,
+});
 
 const rateLimit = require("express-rate-limit");
 const morgan = require("morgan");
@@ -18,7 +30,6 @@ const Media = require("./models/MediaGallery.js");
 
 // MoMo Collection Routes
 
-
 // Auth & Admin Routes
 const authRoutes = require("./routes/auth-routes/index.js");
 const adminRoutes = require("./routes/admin-routes/admin.js");
@@ -30,14 +41,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Debug logging
-console.log('Environment variables loaded:', {
-  MONGODB_URI: MONGODB_URI ? '******' : undefined,
-  PORT
-});
 
 if (!MONGODB_URI) {
-  console.error('❌ MONGODB_URI is not defined in environment variables');
+  console.error("❌ MONGODB_URI is not defined in environment variables");
+
   process.exit(1);
 }
 
@@ -63,89 +70,16 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// Connect to MongoDB with retry logic
-const connectWithRetry = () => {
-  console.log('Attempting to connect to MongoDB...');
-  mongoose
-    .connect(MONGODB_URI)
-    .then(() => {
-      console.log("✅ MongoDB connected successfully");
-    })
-    .catch((err) => {
-      console.error("❌ MongoDB connection error:", err.message);
-      console.log("Retrying connection in 5 seconds...");
-      setTimeout(connectWithRetry, 5000);
-    });
-};
 
-connectWithRetry();
+// Connect to MongoDB
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((e) => console.error("❌ MongoDB error:", e));
 
-mongoose.connection.on('error', (err) => {
-  console.error('❌ MongoDB runtime error:', err.message);
-  if (err.message.includes('ECONNREFUSED')) {
-    console.log("Attempting to reconnect to MongoDB...");
-    setTimeout(connectWithRetry, 5000);
-  }
-});
-
-// Auth middleware with improved debugging
-const authMiddleware = async (req, res, next) => {
-  try {
-    console.log('Auth Headers:', req.headers); // Debug log
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      console.log('No token found in request'); // Debug log
-      return res.status(401).json({ 
-        success: false, 
-        message: 'No token provided',
-        debug: 'Token missing in Authorization header'
-      });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Token decoded:', { userId: decoded.userId, role: decoded.role }); // Debug log
-    
-    const user = await User.findById(decoded.userId);
-    if (!user) {
-      console.log('User not found for token:', decoded.userId); // Debug log
-      return res.status(401).json({ 
-        success: false, 
-        message: 'User not found',
-        debug: 'Valid token but user not found in database'
-      });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error('Auth error details:', error); // Debug log
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Invalid token',
-      debug: error.message
-    });
-  }
-};
-
-// Protected route middleware
-const roleCheck = (roles) => (req, res, next) => {
-  if (!roles.includes(req.user.role)) {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Unauthorized access' 
-    });
-  }
-  next();
-};
-
-// Apply auth middleware to protected routes
-app.use('/api/student', authMiddleware, roleCheck(['student']));
-app.use('/api/admin', authMiddleware, roleCheck(['admin']));
 
 // MoMo Collection Routes
-       // Create API user
+// Create API user
 
 // Auth and Admin Routes
 app.use("/auth", authRoutes);
