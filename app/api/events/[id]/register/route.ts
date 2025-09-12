@@ -4,6 +4,45 @@ import { withRole } from "@/lib/auth/middleware"
 import { ObjectId } from "mongodb"
 import type { EventRegistration } from "@/lib/models/Event"
 
+// ✅ GET /api/events/[id]/register - Check current user's registration status
+export const GET = withRole(["participant", "student"])(
+  async (req: NextRequest, user, context: { params: { id: string } }) => {
+    try {
+      const { id } = context.params
+      if (!ObjectId.isValid(id)) {
+        return NextResponse.json({ error: "Invalid event id" }, { status: 400 })
+      }
+
+      const registrations = await getRegistrationsCollection()
+      const users = await getUsersCollection()
+
+      const tokenUserId = (user as any).userId || (user as any).id || (user as any)._id
+      let dbUser = null as any
+      if (tokenUserId && ObjectId.isValid(tokenUserId)) {
+        dbUser = await users.findOne({ _id: new ObjectId(tokenUserId) })
+      }
+      if (!dbUser && (user as any).email) {
+        dbUser = await users.findOne({ email: (user as any).email })
+      }
+      const resolvedUserId: string = dbUser?._id?.toString() || tokenUserId || ""
+      if (!resolvedUserId) {
+        return NextResponse.json({ error: "Unable to resolve user identity" }, { status: 401 })
+      }
+
+      const existingRegistration = await registrations.findOne({
+        eventId: id,
+        userId: resolvedUserId,
+        status: "registered",
+      })
+
+      return NextResponse.json({ registered: !!existingRegistration })
+    } catch (error) {
+      console.error("Check registration status error:", error)
+      return NextResponse.json({ error: "Failed to check registration status" }, { status: 500 })
+    }
+  }
+)
+
 // ✅ POST /api/events/[id]/register - Register for event
 export const POST = withRole(["participant", "student"])(
   async (req: NextRequest, user, context: { params: { id: string } }) => {

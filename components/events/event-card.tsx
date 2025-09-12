@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Calendar, Clock, MapPin, Users, User } from "lucide-react"
 import type { Event } from "@/lib/models/Event"
 import { useRouter } from "next/navigation"
-import { useState, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { useToast } from "@/components/ui/use-toast"
 
 interface EventCardProps {
@@ -19,6 +19,7 @@ export function EventCard({ event, showActions = true, userRole }: EventCardProp
   const router = useRouter()
   const { toast } = useToast()
   const [joining, setJoining] = useState(false)
+  const [isRegistered, setIsRegistered] = useState<boolean | null>(null)
 
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -90,6 +91,35 @@ export function EventCard({ event, showActions = true, userRole }: EventCardProp
     : joining
     ? "Joining..."
     : ""
+
+  // Check registration status on mount
+  
+  React.useEffect(() => {
+    const checkStatus = async () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      if (!token) {
+        setIsRegistered(false)
+        return
+      }
+      try {
+        const res = await fetch(`/api/events/${event._id}/register`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        })
+        if (res.status === 401) {
+          setIsRegistered(false)
+          return
+        }
+        const data = await res.json().catch(() => ({}))
+        setIsRegistered(!!data?.registered)
+      } catch {
+        setIsRegistered(false)
+      }
+    }
+    checkStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event._id])
 
   const handleJoin = async () => {
     // Allow unauthenticated users to click; redirect to login if API says unauthorized
@@ -222,14 +252,26 @@ export function EventCard({ event, showActions = true, userRole }: EventCardProp
               View Details
             </Button>
 
-            <Button
-              className="flex-1"
-              disabled={!!disabledReason}
-              title={disabledReason}
-              onClick={handleJoin}
-            >
-              {disabledReason || "Join Event"}
-            </Button>
+            {isRegistered ? (
+              <Button className="flex-1" disabled title="Registered">
+                {(() => {
+                  const today = new Date()
+                  const eventDate = new Date(event.date)
+                  const ms = eventDate.getTime() - today.getTime()
+                  const days = Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)))
+                  return `${days} day${days === 1 ? "" : "s"} left`
+                })()}
+              </Button>
+            ) : (
+              <Button
+                className="flex-1"
+                disabled={!!disabledReason}
+                title={disabledReason}
+                onClick={handleJoin}
+              >
+                {disabledReason || "Join Event"}
+              </Button>
+            )}
           </div>
         </CardFooter>
       )}
