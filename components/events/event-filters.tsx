@@ -75,14 +75,17 @@ export function EventFilters({ onFiltersChange, initialFilters }: EventFiltersPr
 
   const handleFilterChange = (key: keyof EventFilters, value: string) => {
     const newFilters = { ...filters, [key]: value }
+    setFilters(newFilters)
+    onFiltersChange(newFilters)
+  }
 
-    // Handle sort options
-    if (key === "sort") {
-      const [sortBy, sortOrder] = value.split("-")
-      newFilters.sortBy = sortBy
-      newFilters.sortOrder = sortOrder
+  const handleSortChange = (value: string) => {
+    const [sortBy, sortOrder] = value.split("-")
+    const newFilters = { 
+      ...filters, 
+      sortBy, 
+      sortOrder 
     }
-
     setFilters(newFilters)
     onFiltersChange(newFilters)
   }
@@ -104,47 +107,64 @@ export function EventFilters({ onFiltersChange, initialFilters }: EventFiltersPr
     filters.search || filters.category !== "all" || filters.department !== "all" || filters.status !== "approved"
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card className="bg-white border border-gray-200 shadow-sm rounded-lg">
+      <CardHeader className="pb-4 px-6 pt-6">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Filter Events</CardTitle>
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-gray-600" />
+            <CardTitle className="text-lg font-semibold text-gray-900">Filter Events</CardTitle>
+          </div>
           <div className="flex items-center gap-2">
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearFilters} 
+                className="text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-400"
+              >
                 <X className="h-4 w-4 mr-1" />
                 Clear
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={() => setShowAdvanced(!showAdvanced)}>
-              <Filter className="h-4 w-4 mr-1" />
-              {showAdvanced ? "Less" : "More"} Filters
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-400"
+            >
+              {showAdvanced ? "Hide" : "Show"} Filters
             </Button>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-6 pb-6">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search events, organizers..."
             value={filters.search}
             onChange={(e) => handleFilterChange("search", e.target.value)}
-            className="pl-10"
+            className="pl-10 h-10 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md text-gray-700 placeholder:text-gray-500"
           />
         </div>
 
         {/* Basic Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-3">
           <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Category</label>
             <Select value={filters.category} onValueChange={(value) => handleFilterChange("category", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Category" />
+              <SelectTrigger className="h-10 border-gray-300 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                <SelectValue placeholder="All Categories" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-gray-200 rounded-md shadow-lg">
                 {categories.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
+                  <SelectItem 
+                    key={category.value} 
+                    value={category.value}
+                    className="text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer"
+                  >
                     {category.label}
                   </SelectItem>
                 ))}
@@ -153,16 +173,21 @@ export function EventFilters({ onFiltersChange, initialFilters }: EventFiltersPr
           </div>
 
           <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Sort By</label>
             <Select
               value={`${filters.sortBy}-${filters.sortOrder}`}
-              onValueChange={(value) => handleFilterChange("sort", value)}
+              onValueChange={handleSortChange}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-10 border-gray-300 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-gray-200 rounded-md shadow-lg">
                 {sortOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem 
+                    key={option.value} 
+                    value={option.value}
+                    className="text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer"
+                  >
                     {option.label}
                   </SelectItem>
                 ))}
@@ -173,15 +198,20 @@ export function EventFilters({ onFiltersChange, initialFilters }: EventFiltersPr
 
         {/* Advanced Filters */}
         {showAdvanced && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+          <div className="space-y-3 pt-4 border-t border-gray-200">
             <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Department</label>
               <Select value={filters.department} onValueChange={(value) => handleFilterChange("department", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Department" />
+                <SelectTrigger className="h-10 border-gray-300 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                  <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border-gray-200 rounded-md shadow-lg">
                   {departments.map((dept) => (
-                    <SelectItem key={dept.value} value={dept.value}>
+                    <SelectItem 
+                      key={dept.value} 
+                      value={dept.value}
+                      className="text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer"
+                    >
                       {dept.label}
                     </SelectItem>
                   ))}
@@ -190,13 +220,18 @@ export function EventFilters({ onFiltersChange, initialFilters }: EventFiltersPr
             </div>
 
             <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Status</label>
               <Select value={filters.status} onValueChange={(value) => handleFilterChange("status", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
+                <SelectTrigger className="h-10 border-gray-300 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                  <SelectValue placeholder="All Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border-gray-200 rounded-md shadow-lg">
                   {statusOptions.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
+                    <SelectItem 
+                      key={status.value} 
+                      value={status.value}
+                      className="text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer"
+                    >
                       {status.label}
                     </SelectItem>
                   ))}
