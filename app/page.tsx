@@ -66,9 +66,11 @@ export default function HomePage() {
               </motion.span>
             ))}
           </motion.h1>
+
           <motion.p
             className="text-2xl text-white mb-10 max-w-2xl mx-auto font-medium drop-shadow-lg"
           >
+
             {"Your comprehensive college event management system. Discover, participate, and organize amazing events that shape your college experience.".split(
               " "
             ).map((word, index) => (
@@ -81,7 +83,9 @@ export default function HomePage() {
                 {word + " "}
               </motion.span>
             ))}
+
           </motion.p>
+
           <motion.div
             className="flex flex-col sm:flex-row gap-4 justify-center"
             initial={{ opacity: 0 }}
@@ -117,11 +121,13 @@ export default function HomePage() {
             <h2 className="text-4xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-pink-500 to-blue-400">
               Everything You Need for College Events
             </h2>
+
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">Made with ❤️ at ASIT</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Feature Cards */}
+
             <Link href="/events/past" className="hover:no-underline">
               <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
@@ -130,7 +136,10 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
+
+
                     Browse and discover past events from all departments and categories.
+
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -144,7 +153,9 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
+
                     Register for events with just a few clicks and manage your participation.
+
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -158,7 +169,9 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
+
                     Earn and download certificates for your participation and achievements.
+
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -172,7 +185,9 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
+
                     Organize and manage events with comprehensive tools for organizers.
+
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -198,6 +213,7 @@ export default function HomePage() {
               Event Categories
             </h2>
             <p className="text-lg text-gray-600">
+
               Explore events across various categories and find what interests you most.
             </p>
           </div>
@@ -278,6 +294,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+
       </section>
     </div>
   );
