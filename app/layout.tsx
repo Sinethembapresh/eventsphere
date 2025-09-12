@@ -27,7 +27,6 @@ export default function RootLayout({
             <div className="flex items-center gap-6">
               <Link href="/" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Home</Link>
               <Link href="/events" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Events</Link>
-             
               <Link href="/auth/login" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Login</Link>
 
             </div>
@@ -57,13 +56,6 @@ export default function RootLayout({
                     Johannesburg, South Africa
                   </a>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-4 text-sm text-blue-700 justify-center">
-                <a href="/" className="hover:text-pink-500 transition">Home</a>
-                <a href="/events" className="hover:text-pink-500 transition">Events</a>
-                <a href="/dashboard" className="hover:text-pink-500 transition">Dashboard</a>
-                <a href="/auth/login" className="hover:text-pink-500 transition">Login</a>
-                <a href="/auth/register" className="hover:text-pink-500 transition">Sign Up</a>
               </div>
               <div className="flex flex-col items-center md:items-end gap-2">
                 <div className="flex gap-3 mb-1">
