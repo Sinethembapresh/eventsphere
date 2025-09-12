@@ -31,10 +31,9 @@ const userRoles = [
 
 export function RegisterForm() {
   const [formData, setFormData] = useState({
-    userName: "",
-    userEmail: "",
+    name: "",
+    email: "",
     password: "",
-    phoneNumber: "",
     role: "",
     department: "",
     enrollmentNumber: "",
@@ -53,8 +52,43 @@ export function RegisterForm() {
     setSuccess("")
 
     try {
-      const response = await axiosInstance.post("/auth/register", formData)
-      const { success, message } = response.data
+      // Simple client-side validation to avoid 400s
+      if (!formData.name || !formData.email || !formData.password || !formData.role) {
+        setError("Name, email, password, and role are required")
+        setIsLoading(false)
+        return
+      }
+      if (!formData.department) {
+        setError("Please select your department")
+        setIsLoading(false)
+        return
+      }
+      if (formData.role === "participant" && !formData.enrollmentNumber) {
+        setError("Enrollment number is required for participants")
+        setIsLoading(false)
+        return
+      }
+      if (formData.role === "organizer" && !formData.institutionalId) {
+        setError("Institutional ID is required for organizers")
+        setIsLoading(false)
+        return
+      }
+
+      const res = await fetch("http://localhost:3000/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userName: formData.name,
+          userEmail: formData.email,
+          password: formData.password,
+          role: formData.role,
+          department: formData.department,
+          enrollmentNumber: formData.enrollmentNumber,
+          institutionalId: formData.institutionalId,
+        }),
+      })
+      const data = await res.json()
+      const { success, message } = data
 
       if (success) {
         setSuccess("Registration successful! Redirecting to login...")
@@ -65,7 +99,7 @@ export function RegisterForm() {
         setError(message || "Registration failed")
       }
     } catch (error) {
-      setError("Network error. Please try again.")
+      setError("Unable to reach server. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -107,12 +141,12 @@ export function RegisterForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="userName">Full Name</Label>
+            <Label htmlFor="name">Full Name</Label>
             <Input
-              id="userName"
-              name="userName"
+              id="name"
+              name="name"
               placeholder="John Doe"
-              value={formData.userName}
+              value={formData.name}
               onChange={handleChange}
               required
               disabled={isLoading}
@@ -120,32 +154,20 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="userEmail">Email</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="userEmail"
-              name="userEmail"
+              id="email"
+              name="email"
               type="email"
               placeholder="john@college.edu"
-              value={formData.userEmail}
+              value={formData.email}
               onChange={handleChange}
               required
               disabled={isLoading}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phoneNumber">Phone Number</Label>
-            <Input
-              id="phoneNumber"
-              name="phoneNumber"
-              type="tel"
-              placeholder="+268 76 123 456"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              required
-              disabled={isLoading}
-            />
-          </div>
+          {/* Phone number removed for API compatibility */}
 
           <div className="space-y-2">
             <Label htmlFor="role">Account Type</Label>

@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { withRole } from "@/lib/auth/middleware"
+import axios from "axios"
+import { API_URL } from "@/app/api/config"
 import {
   getUsersCollection,
   getEventsCollection,
@@ -10,6 +12,35 @@ import {
 // GET /api/admin/analytics - Get system analytics
 export const GET = withRole(["admin"])(async (req: NextRequest) => {
   try {
+    // If an external admin API is configured, proxy to it for counts
+    if (API_URL) {
+      const token = req.headers.get("authorization") || ""
+      const headers: any = token ? { Authorization: token } : {}
+
+      const [usersRes, eventsRes, mediaRes, feedbackRes] = await Promise.all([
+        axios.get(`${API_URL}/api/admin/users`, { headers }).catch(() => ({ data: { users: [] } })),
+        axios.get(`${API_URL}/api/admin/events`, { headers }).catch(() => ({ data: { events: [] } })),
+        axios.get(`${API_URL}/api/admin/media`, { headers }).catch(() => ({ data: { media: [] } })),
+        axios.get(`${API_URL}/api/admin/feedback`, { headers }).catch(() => ({ data: { feedback: [] } })),
+      ])
+
+      const usersCount = usersRes.data?.users?.length || 0
+      const eventsCount = eventsRes.data?.events?.length || 0
+      const mediaCount = mediaRes.data?.media?.length || 0
+      const feedbackCount = feedbackRes.data?.feedback?.length || 0
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          users: { total: usersCount, active: 0, newThisMonth: 0, growth: 0, pendingOrganizers: 0 },
+          events: { total: eventsCount, approved: 0, pending: 0, completed: 0, thisMonth: 0 },
+          registrations: { total: 0, thisMonth: 0, attendanceRate: 0 },
+          feedback: { total: feedbackCount, averageRating: 0, thisMonth: 0 },
+          distributions: { categories: [], departments: [] },
+          media: { total: mediaCount },
+        },
+      })
+    }
     const users = await getUsersCollection()
     const events = await getEventsCollection()
     const registrations = await getRegistrationsCollection()
@@ -23,7 +54,7 @@ export const GET = withRole(["admin"])(async (req: NextRequest) => {
 
     // User statistics
     const [totalUsers, activeUsers, newUsersThisMonth, newUsersLastMonth, pendingOrganizers] = await Promise.all([
-      users.countDocuments({ isActive: true }),
+      users.countDocuments({}),
       users.countDocuments({ isActive: true, lastLogin: { $gte: startOfMonth } }),
       users.countDocuments({ createdAt: { $gte: startOfMonth } }),
       users.countDocuments({
@@ -45,7 +76,7 @@ export const GET = withRole(["admin"])(async (req: NextRequest) => {
     ])
 
     // Registration statistics
-    const [totalRegistrations, registrationsThisMonth, attendanceRate] = await Promise.all([
+    const [registrationDocsTotal, registrationsThisMonth, attendanceRate, sumParticipantsAgg] = await Promise.all([
       registrations.countDocuments({}),
       registrations.countDocuments({ registrationDate: { $gte: startOfMonth } }),
       registrations
@@ -63,6 +94,12 @@ export const GET = withRole(["admin"])(async (req: NextRequest) => {
           },
         ])
         .toArray(),
+      events
+        .aggregate([
+          { $match: { isActive: true } },
+          { $group: { _id: null, totalParticipants: { $sum: { $ifNull: ["$currentParticipants", 0] } } } },
+        ])
+        .toArray(),
     ])
 
     // Feedback statistics
@@ -76,6 +113,8 @@ export const GET = withRole(["admin"])(async (req: NextRequest) => {
     const userGrowth = newUsersLastMonth > 0 ? ((newUsersThisMonth - newUsersLastMonth) / newUsersLastMonth) * 100 : 0
 
     const attendancePercentage = attendanceRate[0] ? (attendanceRate[0].attended / attendanceRate[0].total) * 100 : 0
+    const fallbackParticipantsTotal = sumParticipantsAgg[0]?.totalParticipants || 0
+    const totalRegistrations = registrationDocsTotal > 0 ? registrationDocsTotal : fallbackParticipantsTotal
 
     // Category distribution
     const categoryStats = await events
@@ -96,33 +135,36 @@ export const GET = withRole(["admin"])(async (req: NextRequest) => {
       .toArray()
 
     return NextResponse.json({
-      users: {
-        total: totalUsers,
-        active: activeUsers,
-        newThisMonth: newUsersThisMonth,
-        growth: userGrowth,
-        pendingOrganizers,
-      },
-      events: {
-        total: totalEvents,
-        approved: approvedEvents,
-        pending: pendingEvents,
-        completed: completedEvents,
-        thisMonth: eventsThisMonth,
-      },
-      registrations: {
-        total: totalRegistrations,
-        thisMonth: registrationsThisMonth,
-        attendanceRate: attendancePercentage,
-      },
-      feedback: {
-        total: totalFeedback,
-        averageRating: averageRating[0]?.avgRating || 0,
-        thisMonth: feedbackThisMonth,
-      },
-      distributions: {
-        categories: categoryStats,
-        departments: departmentStats,
+      success: true,
+      data: {
+        users: {
+          total: totalUsers,
+          active: activeUsers,
+          newThisMonth: newUsersThisMonth,
+          growth: userGrowth,
+          pendingOrganizers,
+        },
+        events: {
+          total: totalEvents,
+          approved: approvedEvents,
+          pending: pendingEvents,
+          completed: completedEvents,
+          thisMonth: eventsThisMonth,
+        },
+        registrations: {
+          total: totalRegistrations,
+          thisMonth: registrationsThisMonth,
+          attendanceRate: attendancePercentage,
+        },
+        feedback: {
+          total: totalFeedback,
+          averageRating: averageRating[0]?.avgRating || 0,
+          thisMonth: feedbackThisMonth,
+        },
+        distributions: {
+          categories: categoryStats,
+          departments: departmentStats,
+        },
       },
     })
   } catch (error) {

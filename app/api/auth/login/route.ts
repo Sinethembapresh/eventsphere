@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
         department: user.department,
         enrollmentNumber: user.enrollmentNumber,
       },
+      token: token,
     })
 
     // Set HTTP-only cookie

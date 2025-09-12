@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axiosInstance from "@/app/api/axiosInstance"; // adjust path if needed
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UserManagement } from "@/components/admin/user-management";
 import { EventApproval } from "@/components/admin/event-approval";
@@ -12,6 +11,8 @@ import {
   Calendar,
   TrendingUp,
   Star,
+  Image as ImageIcon,
+  MessageSquare,
   AlertTriangle,
   Settings,
 } from "lucide-react";
@@ -41,6 +42,9 @@ interface AdminAnalytics {
     averageRating: number;
     thisMonth: number;
   };
+  media?: {
+    total: number;
+  };
   distributions: {
     categories: Array<{ _id: string; count: number }>;
     departments: Array<{ _id: string; count: number }>;
@@ -59,13 +63,22 @@ export default function AdminDashboard() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/admin/analytics");
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const response = await fetch("/api/admin/analytics", {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        cache: "no-store",
+      });
 
-      if (response.data.success) {
-        setAnalytics(response.data.data);
+      const data = await response.json();
+
+      if (data.success) {
+        setAnalytics(data.data);
         setError("");
       } else {
-        setError(response.data.message || "Failed to fetch analytics");
+        setError(data.message || "Failed to fetch analytics");
       }
     } catch (err: any) {
       console.error("❌ Fetch error:", err);
@@ -166,26 +179,26 @@ export default function AdminDashboard() {
             />
 
             <StatsCard
-              title="Active Events"
-              value={safeAnalytics.events.approved}
-              description={`${safeAnalytics.events.pending} pending approval`}
+              title="Events"
+              value={safeAnalytics.events.total}
+              description={`${safeAnalytics.events.approved} approved`}
               icon={Calendar}
               className="bg-green-50 border-green-200"
             />
 
             <StatsCard
-              title="Total Registrations"
-              value={safeAnalytics.registrations.total}
-              description={`${safeAnalytics.registrations.thisMonth} this month`}
-              icon={TrendingUp}
+              title="Media"
+              value={safeAnalytics.media?.total || 0}
+              description={`total media assets`}
+              icon={ImageIcon}
               className="bg-orange-50 border-orange-200"
             />
 
             <StatsCard
-              title="Average Rating"
-              value={safeAnalytics.feedback.averageRating.toFixed(1)}
-              description={`${safeAnalytics.feedback.total} total reviews`}
-              icon={Star}
+              title="Feedback"
+              value={safeAnalytics.feedback.total}
+              description={`total reviews`}
+              icon={MessageSquare}
               className="bg-purple-50 border-purple-200"
             />
           </div>
