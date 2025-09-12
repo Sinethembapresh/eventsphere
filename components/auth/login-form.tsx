@@ -68,7 +68,7 @@ export function LoginForm() {
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-        <CardDescription>Sign in to your EventSphere account</CardDescription>
+        <CardDescription>Sign in to your EventSphere account now</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

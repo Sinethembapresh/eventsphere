@@ -64,51 +64,63 @@ export default function HomePage() {
             <h2 className="text-4xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-pink-500 to-blue-400">Everything You Need for College Events</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">Made with ❤️ at ASIT</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="text-center shadow-xl border-0 bg-gradient-to-br from-blue-50 to-pink-50 hover:scale-105 transition-transform">
-              <CardHeader>
-                <Calendar className="h-14 w-14 text-blue-500 mx-auto mb-4" />
-                <CardTitle className="text-xl font-bold">Event Discovery</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base text-gray-700">
-                  Browse and discover upcoming events across all departments and categories.
-                </CardDescription>
-              </CardContent>
-            </Card>
-            <Card className="text-center shadow-xl border-0 bg-gradient-to-br from-pink-50 to-blue-50 hover:scale-105 transition-transform">
-              <CardHeader>
-                <Users className="h-14 w-14 text-pink-500 mx-auto mb-4" />
-                <CardTitle className="text-xl font-bold">Easy Registration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base text-gray-700">
-                  Register for events with just a few clicks and manage your participation.
-                </CardDescription>
-              </CardContent>
-            </Card>
-            <Card className="text-center shadow-xl border-0 bg-gradient-to-br from-blue-50 to-pink-50 hover:scale-105 transition-transform">
-              <CardHeader>
-                <Trophy className="h-14 w-14 text-blue-400 mx-auto mb-4" />
-                <CardTitle className="text-xl font-bold">Certificates</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base text-gray-700">
-                  Earn and download certificates for your participation and achievements.
-                </CardDescription>
-              </CardContent>
-            </Card>
-            <Card className="text-center shadow-xl border-0 bg-gradient-to-br from-pink-50 to-blue-50 hover:scale-105 transition-transform">
-              <CardHeader>
-                <BookOpen className="h-14 w-14 text-pink-400 mx-auto mb-4" />
-                <CardTitle className="text-xl font-bold">Event Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base text-gray-700">
-                  Organize and manage events with comprehensive tools for organizers.
-                </CardDescription>
-              </CardContent>
-            </Card>
+
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Link href="/events/past" className="hover:no-underline">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <Calendar className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                  <CardTitle>Past Events</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Browse and discover past events from all departments and categories.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/events/register" className="hover:no-underline">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <Users className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <CardTitle>Easy Registration</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Register for events with just a few clicks and manage your participation.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/events/certificates" className="hover:no-underline">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <Trophy className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+                  <CardTitle>Certificates</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Earn and download certificates for your participation and achievements.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/events/manage" className="hover:no-underline">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <BookOpen className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                  <CardTitle>Event Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>Organize and manage events with comprehensive tools for organizers.</CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
+
           </div>
         </div>
       </section>
@@ -122,22 +134,28 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {[
-              { name: "Technical", color: "bg-gradient-to-r from-blue-200 to-pink-200 text-blue-800", count: "25+" },
-              { name: "Cultural", color: "bg-gradient-to-r from-pink-200 to-blue-200 text-pink-800", count: "30+" },
-              { name: "Sports", color: "bg-gradient-to-r from-blue-100 to-pink-100 text-blue-700", count: "20+" },
-              { name: "Academic", color: "bg-gradient-to-r from-pink-100 to-blue-100 text-pink-700", count: "15+" },
-              { name: "Social", color: "bg-gradient-to-r from-blue-200 to-pink-100 text-blue-800", count: "10+" },
-              { name: "Career", color: "bg-gradient-to-r from-pink-200 to-blue-200 text-pink-800", count: "12+" },
+
+              { name: "Technical", color: "bg-purple-100 text-purple-800", count: "25+", path: "technical" },
+              { name: "Cultural", color: "bg-pink-100 text-pink-800", count: "30+", path: "cultural" },
+              { name: "Sports", color: "bg-orange-100 text-orange-800", count: "20+", path: "sports" },
+              { name: "Academic", color: "bg-blue-100 text-blue-800", count: "15+", path: "academic" },
+              { name: "Social", color: "bg-green-100 text-green-800", count: "10+", path: "social" },
+              { name: "Career", color: "bg-indigo-100 text-indigo-800", count: "12+", path: "career" },
             ].map((category) => (
-              <Card key={category.name} className="text-center shadow-md border-0 hover:scale-105 transition-transform cursor-pointer">
-                <CardContent className="p-6">
-                  <div className={`inline-flex items-center px-4 py-2 rounded-full text-base font-semibold ${category.color} mb-2 shadow-sm`}>
-                    {category.name}
-                  </div>
-                  <p className="text-2xl font-extrabold text-blue-700 drop-shadow-sm">{category.count}</p>
-                  <p className="text-sm text-gray-600">Events</p>
-                </CardContent>
-              </Card>
+              <Link key={category.name} href={`/events/${category.path}`} className="hover:no-underline">
+                <Card className="text-center hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-6">
+                    <div
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${category.color} mb-2`}
+                    >
+                      {category.name}
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">{category.count}</p>
+                    <p className="text-sm text-gray-600">Events</p>
+                  </CardContent>
+                </Card>
+              </Link>
+
             ))}
           </div>
         </div>
@@ -146,10 +164,13 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-8 lg:px-16">
         <div className="max-w-4xl mx-auto text-center">
-          <Card className="bg-gradient-to-r from-pink-500 to-blue-500 text-white shadow-2xl border-0">
-            <CardContent className="p-14">
-              <h2 className="text-4xl font-extrabold mb-4">Ready to Get Started?</h2>
-              <p className="text-xl mb-8 text-pink-100">
+
+          <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <CardContent className="p-12">
+              <h2 className="text-3xl font-bold mb-4">Ready to Get Started? </h2>
+              <p className="text-xl mb-8 text-blue-100">
+
+
                 Join thousands of students already using EventSphere to enhance their college experience.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
