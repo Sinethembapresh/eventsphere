@@ -28,7 +28,7 @@ export default function RootLayout({
               <Link href="/" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Home</Link>
               <Link href="/events" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Events</Link>
               <Link href="/auth/login" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Login</Link>
-              <Link href="/auth/register" className="ml-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:from-pink-500 hover:to-blue-500 transition">Sign Up</Link>
+
             </div>
           </nav>
         </header>

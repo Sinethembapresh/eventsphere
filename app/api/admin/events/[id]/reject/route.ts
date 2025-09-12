@@ -7,7 +7,23 @@ import type { Notification } from "@/lib/models/Notification"
 // POST /api/admin/events/[id]/reject - Reject event
 export const POST = withRole(["admin"])(async (req: NextRequest, user, { params }: { params: { id: string } }) => {
   try {
-    const { reason } = await req.json()
+    if (!ObjectId.isValid(params.id)) {
+      return NextResponse.json({ error: "Invalid event id" }, { status: 400 })
+    }
+
+    let body: any = {}
+    try {
+      body = await req.json()
+    } catch {
+      body = {}
+    }
+
+    const { reason } = body
+
+    if (!reason || !reason.trim()) {
+      return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 })
+    }
+
     const events = await getEventsCollection()
     const notifications = await getNotificationsCollection()
 
@@ -18,7 +34,7 @@ export const POST = withRole(["admin"])(async (req: NextRequest, user, { params 
     }
 
     // Update event status
-    await events.updateOne(
+    const updateResult = await events.updateOne(
       { _id: new ObjectId(params.id) },
       {
         $set: {
@@ -27,6 +43,10 @@ export const POST = withRole(["admin"])(async (req: NextRequest, user, { params 
         },
       },
     )
+
+    if (updateResult.matchedCount === 0) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 })
+    }
 
     // Send notification to organizer
     const notification: Notification = {
@@ -40,7 +60,7 @@ export const POST = withRole(["admin"])(async (req: NextRequest, user, { params 
       createdAt: new Date(),
     }
 
-    await notifications.insertOne(notification)
+    await notifications.insertOne(notification as any)
 
     return NextResponse.json({ message: "Event rejected successfully" })
   } catch (error) {
