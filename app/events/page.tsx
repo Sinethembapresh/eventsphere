@@ -98,28 +98,22 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                <Calendar className="h-8 w-8" />
-                College Events
-              </h1>
-              <p className="text-gray-600 mt-1">Discover and participate in exciting college events</p>
-            </div>
-
-            {(userRole === "organizer" || userRole === "admin") && (
-              <Button onClick={() => router.push("/events/create")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Event
-              </Button>
-            )}
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-white to-blue-100 pt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 via-pink-500 to-blue-400 text-transparent bg-clip-text flex items-center gap-2">
+              <Calendar className="h-8 w-8" />
+              College Events
+            </h1>
+            <p className="text-gray-600 mt-1">Discover and participate in exciting college events</p>
           </div>
+          {(userRole === "organizer" || userRole === "admin") && (
+            <Button onClick={() => router.push("/events/create")}> 
+              <Plus className="h-4 w-4 mr-2" />
+              Create Event
+            </Button>
+          )}
         </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
