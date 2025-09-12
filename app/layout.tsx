@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
@@ -9,7 +8,6 @@ import { Facebook, Instagram, MapPin, Mail } from "lucide-react"
 
 export const metadata: Metadata = {
   title: 'eventsphere',
-
 }
 
 export default function RootLayout({
@@ -27,8 +25,9 @@ export default function RootLayout({
             <div className="flex items-center gap-6">
               <Link href="/" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Home</Link>
               <Link href="/events" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Events</Link>
+              <Link href="/gallery" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Gallery</Link>
               <Link href="/auth/login" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Login</Link>
-
+              
             </div>
           </nav>
         </header>
