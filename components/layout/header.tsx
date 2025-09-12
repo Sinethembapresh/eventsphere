@@ -79,7 +79,11 @@ export function Header() {
             <Link href="/events" className="text-gray-600 hover:text-gray-900">
               Events
             </Link>
-        
+            {user && (
+              <Link href={getDashboardLink()} className="text-gray-600 hover:text-gray-900">
+                Dashboard
+              </Link>
+            )}
           </nav>
 
           <div className="flex items-center space-x-4">
