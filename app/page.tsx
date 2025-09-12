@@ -8,13 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Calendar,
-  Users,
-  Trophy,
-  BookOpen,
-  ArrowRight,
-} from "lucide-react";
+import { Trophy, BookOpen, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -25,9 +19,11 @@ export default function HomePage() {
     "https://www.americanprogress.org/wp-content/uploads/sites/2/2021/06/GettyImages-902836580.jpg",
     "https://img.freepik.com/free-photo/study-group-african-people_23-2149156390.jpg?semt=ais_hybrid&w=740&q=80",
   ];
+
   const [current, setCurrent] = useState(0);
 
   // Animation mount state
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -40,6 +36,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-white to-blue-100">
+
       {/* Add padding top to offset fixed header */}
       <div className="pt-20">
         {/* Hero Section */}
@@ -254,6 +251,7 @@ export default function HomePage() {
           </div>
         </section>
       </div>
+
     </div>
   );
 }
