@@ -66,7 +66,7 @@ export default function RootLayout({
                     <Instagram className="w-5 h-5" />
                   </a>
                 </div>
-                <div className="text-xs text-gray-500 text-center md:text-right">&copy; {new Date().getFullYear()} EventSphere. All rights reserved.</div>
+                <div className="text-xs text-gray-500 text-center md:text-right">&copy; {new Date().getFullYear()} EventSphere. All rights reserved. Designed By InnovateX</div>
               </div>
             </div>
           </footer>
