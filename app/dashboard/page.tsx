@@ -47,7 +47,7 @@ export default function StudentDashboard() {
     )
   }
 
-  if (user.role !== "student") {
+  if (user.role !== "participant") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-lg w-full text-center shadow-lg">

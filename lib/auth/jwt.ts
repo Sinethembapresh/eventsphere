@@ -9,6 +9,7 @@ export interface JWTPayload {
   email: string
   role: string
   name: string
+  department?: string
 }
 
 export function generateToken(user: User): string {
@@ -17,6 +18,7 @@ export function generateToken(user: User): string {
     email: user.email,
     role: user.role,
     name: user.name,
+    department: user.department,
   }
 
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })

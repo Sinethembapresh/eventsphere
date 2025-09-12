@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Calendar, Clock, MapPin, Users, User } from "lucide-react"
 import type { Event } from "@/lib/models/Event"
 import { useRouter } from "next/navigation"
+import React, { useState, useMemo } from "react"
+import { useToast } from "@/components/ui/use-toast"
 
 interface EventCardProps {
   event: Event & { _id: string }
@@ -15,6 +17,9 @@ interface EventCardProps {
 
 export function EventCard({ event, showActions = true, userRole }: EventCardProps) {
   const router = useRouter()
+  const { toast } = useToast()
+  const [joining, setJoining] = useState(false)
+  const [isRegistered, setIsRegistered] = useState<boolean | null>(null)
 
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -62,9 +67,109 @@ export function EventCard({ event, showActions = true, userRole }: EventCardProp
     return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800"
   }
 
-  const isEventFull = event.maxParticipants && event.currentParticipants >= event.maxParticipants
-  const isRegistrationClosed = new Date() > new Date(event.registrationDeadline)
+  const registrationDeadlineDate = useMemo(() => {
+    try {
+      return event.registrationDeadline ? new Date(event.registrationDeadline) : new Date(event.date)
+    } catch {
+      return new Date(event.date)
+    }
+  }, [event.registrationDeadline, event.date])
+
+  const isEventFull = !!event.maxParticipants && (event.currentParticipants || 0) >= event.maxParticipants
+  const isRegistrationClosed = new Date() > registrationDeadlineDate
   const isEventPast = new Date() > new Date(event.date)
+  const isApproved = event.status === "approved"
+
+  const disabledReason = !isApproved
+    ? "Pending approval"
+    : isEventPast
+    ? "Event ended"
+    : isEventFull
+    ? "Full"
+    : isRegistrationClosed
+    ? "Closed"
+    : joining
+    ? "Joining..."
+    : ""
+
+  // Check registration status on mount
+  
+  React.useEffect(() => {
+    const checkStatus = async () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      if (!token) {
+        setIsRegistered(false)
+        return
+      }
+      try {
+        const res = await fetch(`/api/events/${event._id}/register`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        })
+        if (res.status === 401) {
+          setIsRegistered(false)
+          return
+        }
+        const data = await res.json().catch(() => ({}))
+        setIsRegistered(!!data?.registered)
+      } catch {
+        setIsRegistered(false)
+      }
+    }
+    checkStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event._id])
+
+  const handleJoin = async () => {
+    // Allow unauthenticated users to click; redirect to login if API says unauthorized
+    if (userRole && userRole !== "participant" && userRole !== "student") {
+      toast({ title: "Not allowed", description: "Only students can join events", variant: "destructive" })
+      return
+    }
+
+    if (joining) return
+    setJoining(true)
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      if (!token) {
+        router.push(`/auth/login`)
+        return
+      }
+
+      const res = await fetch(`/api/events/${event._id}/register`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      })
+
+      // If not logged in, redirect to login
+      if (res.status === 401) {
+        router.push(`/auth/login`)
+        return
+      }
+
+      // If logged in but lacks permissions
+      if (res.status === 403) {
+        toast({ title: "Not allowed", description: "Only students can join events", variant: "destructive" })
+        return
+      }
+
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to join event")
+      }
+
+      toast({ title: "Joined", description: "Successfully registered for event" })
+    } catch (e: any) {
+      toast({ title: "Unable to join", description: e.message || "Please try again later", variant: "destructive" })
+    } finally {
+      setJoining(false)
+    }
+  }
 
   return (
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
@@ -147,13 +252,24 @@ export function EventCard({ event, showActions = true, userRole }: EventCardProp
               View Details
             </Button>
 
-            {userRole === "participant" && event.status === "approved" && !isEventPast && (
+            {isRegistered ? (
+              <Button className="flex-1" disabled title="Registered">
+                {(() => {
+                  const today = new Date()
+                  const eventDate = new Date(event.date)
+                  const ms = eventDate.getTime() - today.getTime()
+                  const days = Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)))
+                  return `${days} day${days === 1 ? "" : "s"} left`
+                })()}
+              </Button>
+            ) : (
               <Button
                 className="flex-1"
-                disabled={isEventFull || isRegistrationClosed}
-                onClick={() => router.push(`/events/${event._id}/register`)}
+                disabled={!!disabledReason}
+                title={disabledReason}
+                onClick={handleJoin}
               >
-                {isEventFull ? "Full" : isRegistrationClosed ? "Closed" : "Register"}
+                {disabledReason || "Join Event"}
               </Button>
             )}
           </div>

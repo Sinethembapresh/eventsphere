@@ -1,10 +1,12 @@
 "use client";
+
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, Users, Trophy, BookOpen, ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
+
 
 export default function HomePage() {
   // Sliding images for hero background
@@ -13,21 +15,25 @@ export default function HomePage() {
     "https://swatipages.com/wp-content/uploads/classified-listing/2024/08/MB-4.jpg",
     "https://www.americanprogress.org/wp-content/uploads/sites/2/2021/06/GettyImages-902836580.jpg",
     "https://img.freepik.com/free-photo/study-group-african-people_23-2149156390.jpg?semt=ais_hybrid&w=740&q=80",
-  ]
-  const [current, setCurrent] = useState(0)
+  ];
+
+  const [current, setCurrent] = useState(0);
 
   // Animation mount state
-  const [mounted, setMounted] = useState(false)
+
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    setMounted(true)
+    setMounted(true);
     const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % images.length)
-    }, 3500)
-    return () => clearInterval(interval)
-  }, [])
+      setCurrent((prev) => (prev + 1) % images.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [images.length]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-white to-blue-100">
+
       {/* Hero Section */}
       <section className="relative w-screen h-[100vh] flex items-center justify-center overflow-hidden p-0 m-0">
         {/* Sliding background images */}
@@ -277,4 +283,3 @@ export default function HomePage() {
       {/* CTA Section */}
         </div>
   )
-}
