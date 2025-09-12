@@ -1,75 +1,16 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { useEffect, useState } from "react"
 import Link from "next/link"
 
-export default function StudentDashboard() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchUser() {
-      setLoading(true)
-      try {
-        const response = await fetch("/api/auth/me")
-        if (response.ok) {
-          const data = await response.json()
-          setUser(data.user)
-        }
-      } catch {
-        setUser(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchUser()
-  }, [])
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-blue-600 text-lg">Loading dashboard...</div>
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-lg w-full text-center shadow-lg">
-          <CardHeader>
-            <CardTitle>Login Required</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CardDescription>
-              Please <Link href="/auth/login" className="text-blue-600 font-semibold hover:underline">log in</Link> to access your student dashboard.
-            </CardDescription>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (user.role !== "participant") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-lg w-full text-center shadow-lg">
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CardDescription>
-              Only students can access this dashboard.
-            </CardDescription>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+export default function ParticipantDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center">
       <Card className="max-w-2xl w-full text-center shadow-lg">
         <CardHeader>
-          <CardTitle>Student Dashboard</CardTitle>
-          <CardDescription>Welcome, {user.name}</CardDescription>
+          <CardTitle>Participant Dashboard</CardTitle>
+          <CardDescription>Welcome to EventSphere</CardDescription>
         </CardHeader>
         <CardContent>
           <CardDescription>
