@@ -1,10 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { verifyToken, type JWTPayload } from "./jwt"
 
-export function withAuth(handler: (req: NextRequest, user: JWTPayload) => Promise<NextResponse>) {
-  return async (req: NextRequest) => {
+export function withAuth(
+  handler: (req: NextRequest, user: JWTPayload, ctx?: any) => Promise<NextResponse>,
+) {
+  return async (req: NextRequest, ctx?: any) => {
     try {
-      const token = req.headers.get("authorization")?.replace("Bearer ", "") || req.cookies.get("auth-token")?.value
+      const token =
+        req.headers.get("authorization")?.replace("Bearer ", "") ||
+        req.cookies.get("auth-token")?.value
 
       if (!token) {
         return NextResponse.json({ error: "Authentication required" }, { status: 401 })
@@ -15,7 +19,7 @@ export function withAuth(handler: (req: NextRequest, user: JWTPayload) => Promis
         return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
       }
 
-      return handler(req, user)
+      return handler(req, user, ctx)
     } catch (error) {
       return NextResponse.json({ error: "Authentication failed" }, { status: 401 })
     }
@@ -23,11 +27,13 @@ export function withAuth(handler: (req: NextRequest, user: JWTPayload) => Promis
 }
 
 export function withRole(roles: string[]) {
-  return (handler: (req: NextRequest, user: JWTPayload) => Promise<NextResponse>) =>
-    withAuth(async (req: NextRequest, user: JWTPayload) => {
+  return (
+    handler: (req: NextRequest, user: JWTPayload, ctx?: any) => Promise<NextResponse>,
+  ) =>
+    withAuth(async (req: NextRequest, user: JWTPayload, ctx?: any) => {
       if (!roles.includes(user.role)) {
         return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
       }
-      return handler(req, user)
+      return handler(req, user, ctx)
     })
 }
