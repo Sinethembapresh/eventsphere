@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import axiosInstance from "../../app/api/axiosInstance"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -27,17 +27,12 @@ export function LoginForm() {
     setError("")
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
+      const response = await axiosInstance.post("/auth/login", formData);
+      const { success, data, token } = response.data;
 
-      const data = await response.json()
-
-      if (response.ok) {
+      if (success) {
+        // Store the token
+        localStorage.setItem('token', token);
         // Redirect based on user role
         switch (data.user.role) {
           case "admin":

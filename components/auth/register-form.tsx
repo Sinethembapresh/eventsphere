@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import axiosInstance from "../../app/api/axiosInstance"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -31,17 +31,16 @@ const userRoles = [
 
 export function RegisterForm() {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    userName: "",
+    userEmail: "",
     password: "",
-    confirmPassword: "",
+    phoneNumber: "",
     role: "",
     department: "",
     enrollmentNumber: "",
     institutionalId: "",
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -53,34 +52,17 @@ export function RegisterForm() {
     setError("")
     setSuccess("")
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
-      setIsLoading(false)
-      return
-    }
-
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
+      const response = await axiosInstance.post("/auth/register", formData)
+      const { success, message } = response.data
 
-      const data = await response.json()
-
-      if (response.ok) {
-        if (data.requiresApproval) {
-          setSuccess("Registration successful! Your account is pending approval from an administrator.")
-        } else {
-          setSuccess("Registration successful! Redirecting to dashboard...")
-          setTimeout(() => {
-            router.push("/dashboard")
-          }, 2000)
-        }
+      if (success) {
+        setSuccess("Registration successful! Redirecting to login...")
+        setTimeout(() => {
+          router.push("/auth/login")
+        }, 2000)
       } else {
-        setError(data.error || "Registration failed")
+        setError(message || "Registration failed")
       }
     } catch (error) {
       setError("Network error. Please try again.")
@@ -124,33 +106,45 @@ export function RegisterForm() {
             </Alert>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="userName">Full Name</Label>
+            <Input
+              id="userName"
+              name="userName"
+              placeholder="John Doe"
+              value={formData.userName}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="john@college.edu"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="userEmail">Email</Label>
+            <Input
+              id="userEmail"
+              name="userEmail"
+              type="email"
+              placeholder="john@college.edu"
+              value={formData.userEmail}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Input
+              id="phoneNumber"
+              name="phoneNumber"
+              type="tel"
+              placeholder="+268 76 123 456"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
+            />
           </div>
 
           <div className="space-y-2">
@@ -218,57 +212,29 @@ export function RegisterForm() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  disabled={isLoading}
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Create password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
 
