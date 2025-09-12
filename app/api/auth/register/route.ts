@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Role-specific validation
-    if (role === "participant" && (!department || !enrollmentNumber)) {
+    if (role === "student" && (!department || !enrollmentNumber)) {
       return NextResponse.json(
         { error: "Department and enrollment number are required for participants" },
         { status: 400 },
