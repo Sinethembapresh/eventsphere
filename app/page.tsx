@@ -53,7 +53,6 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto text-center relative z-10">
           <motion.h1
             className="text-5xl md:text-7xl font-extrabold mb-6 text-white drop-shadow-2xl"
-            style={{ willChange: "opacity, transform" }}
           >
             {"Welcome to EventSphere".split(" ").map((word, index) => (
               <motion.span
@@ -70,25 +69,25 @@ export default function HomePage() {
 
           <motion.p
             className="text-2xl text-white mb-10 max-w-2xl mx-auto font-medium drop-shadow-lg"
-            style={{ willChange: "opacity, transform" }}
           >
-            {"Your comprehensive college event management system. Discover, participate, and organize amazing events that shape your college experience."
-              .split(" ")
-              .map((word, index) => (
-                <motion.span
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  {word + " "}
-                </motion.span>
-              ))}
+
+            {"Your comprehensive college event management system. Discover, participate, and organize amazing events that shape your college experience.".split(
+              " "
+            ).map((word, index) => (
+              <motion.span
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                {word + " "}
+              </motion.span>
+            ))}
+
           </motion.p>
 
           <motion.div
             className="flex flex-col sm:flex-row gap-4 justify-center"
-            style={{ willChange: "opacity, transform" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1 }}
@@ -122,12 +121,13 @@ export default function HomePage() {
             <h2 className="text-4xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-pink-500 to-blue-400">
               Everything You Need for College Events
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Made with ❤️ at ASIT
-            </p>
+
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Made with ❤️ at ASIT</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Feature Cards */}
+
             <Link href="/events/past" className="hover:no-underline">
               <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
@@ -136,8 +136,10 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Browse and discover past events from all departments and
-                    categories.
+
+
+                    Browse and discover past events from all departments and categories.
+
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -151,8 +153,9 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Register for events with just a few clicks and manage your
-                    participation.
+
+                    Register for events with just a few clicks and manage your participation.
+
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -166,8 +169,9 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Earn and download certificates for your participation and
-                    achievements.
+
+                    Earn and download certificates for your participation and achievements.
+
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -181,8 +185,9 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Organize and manage events with comprehensive tools for
-                    organizers.
+
+                    Organize and manage events with comprehensive tools for organizers.
+
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -208,17 +213,19 @@ export default function HomePage() {
               Event Categories
             </h2>
             <p className="text-lg text-gray-600">
-              Explore events across various categories and find what interests
-              you most.
+
+              Explore events across various categories and find what interests you most.
             </p>
           </div>
+
           <div className="grid grid-cols-3 grid-rows-2 gap-6">
+            {/* Category Cards */}
             {[
               {
                 name: "Technical",
                 count: "25+",
                 path: "technical",
-                bg: "https://plus.unsplash.com/premium_photo-1682125090365-58de6dbf8143?fm=jpg&q=60&w=3000",
+                bg: "https://plus.unsplash.com/premium_photo-1682125090365-58de6dbf8143?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8dGVjaCUyMGV2ZW50fGVufDB8fDB8fHww",
               },
               {
                 name: "Cultural",
@@ -242,7 +249,7 @@ export default function HomePage() {
                 name: "Social",
                 count: "10+",
                 path: "social",
-                bg: "https://media.istockphoto.com/id/479977238/photo/table-setting-for-an-event-party-or-wedding-reception.jpg",
+                bg: "https://media.istockphoto.com/id/479977238/photo/table-setting-for-an-event-party-or-wedding-reception.jpg?s=612x612&w=0&k=20&c=yIKLzW7wMydqmuItTTtUGS5cYTmrRGy0rXk81AltdTA=",
               },
               {
                 name: "Career",
@@ -287,24 +294,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-20 text-center bg-gradient-to-r from-blue-500 to-pink-500 text-white">
-        <h2 className="text-4xl font-extrabold mb-6">
-          Ready to Join EventSphere?
-        </h2>
-        <p className="text-lg mb-8">
-          Discover, organize, and participate in college events like never
-          before!
-        </p>
-        <Button
-          asChild
-          size="lg"
-          className="text-lg px-10 py-4 bg-white text-blue-600 font-bold shadow-lg hover:bg-gray-100 transition-all"
-        >
-          <Link href="/auth/register">Get Started</Link>
-        </Button>
       </section>
     </div>
   );
