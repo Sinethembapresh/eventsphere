@@ -31,6 +31,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
+import { OrganizerFeedbackView } from "@/components/feedback/organizer-feedback-view"
 import type { Event } from "@/lib/models/Event"
 
 interface OrganizerStats {
@@ -490,10 +491,11 @@ export default function OrganizerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="registrations">Registrations</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="feedback">Feedback</TabsTrigger>
             <TabsTrigger value="certificates">Certificates</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
             <TabsTrigger value="communication">Communication</TabsTrigger>
@@ -787,6 +789,11 @@ export default function OrganizerDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Feedback Tab */}
+          <TabsContent value="feedback" className="space-y-6">
+            <OrganizerFeedbackView />
           </TabsContent>
 
           {/* Certificates Tab */}

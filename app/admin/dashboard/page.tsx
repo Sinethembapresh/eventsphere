@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UserManagement } from "@/components/admin/user-management";
 import { EventApproval } from "@/components/admin/event-approval";
+import { NotificationFix } from "@/components/admin/notification-fix";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ import {
   AlertTriangle,
   Settings,
   LogOut,
+  Bell,
 } from "lucide-react";
 
 interface AdminAnalytics {
@@ -343,10 +345,11 @@ export default function AdminDashboard() {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="users">User Management</TabsTrigger>
               <TabsTrigger value="events">Event Approval</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
 
@@ -497,6 +500,19 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <EventApproval />
+            </TabsContent>
+
+            <TabsContent value="notifications" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <Bell className="h-6 w-6" />
+                    Notification Management
+                  </h2>
+                  <p className="text-gray-600 mt-1">Fix notification distribution and manage system notifications</p>
+                </div>
+              </div>
+              <NotificationFix />
             </TabsContent>
 
             <TabsContent value="analytics">

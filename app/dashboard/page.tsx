@@ -22,7 +22,8 @@ import {
   QrCode,
   TrendingUp,
   Activity,
-  LogOut
+  LogOut,
+  MessageSquare
 } from "lucide-react"
 import Link from "next/link"
 import { EventCard } from "@/components/events/event-card"
@@ -265,10 +266,11 @@ export default function ParticipantDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="feedback">Feedback</TabsTrigger>
             <TabsTrigger value="certificates">Certificates</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -352,13 +354,15 @@ export default function ParticipantDashboard() {
                     <Search className="h-6 w-6" />
                     <span className="text-sm">Search Events</span>
                   </Button>
+                  <Button variant="outline" className="h-20 flex-col gap-2" asChild>
+                    <Link href="/feedback">
+                      <MessageSquare className="h-6 w-6" />
+                      <span className="text-sm">Give Feedback</span>
+                    </Link>
+                  </Button>
                   <Button variant="outline" className="h-20 flex-col gap-2" onClick={() => handleQuickAction("Download Certificates")}>
                     <Download className="h-6 w-6" />
                     <span className="text-sm">Certificates</span>
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2" onClick={() => handleQuickAction("Share Events")}>
-                    <Share2 className="h-6 w-6" />
-                    <span className="text-sm">Share Events</span>
                   </Button>
                 </div>
               </CardContent>
@@ -416,6 +420,32 @@ export default function ParticipantDashboard() {
                 ) : (
                   <p className="text-gray-500 text-center py-8">No notifications</p>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Feedback Tab */}
+          <TabsContent value="feedback" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Event Feedback
+                </CardTitle>
+                <CardDescription>Share your experience and help us improve future events</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <MessageSquare className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Share Your Feedback</h3>
+                  <p className="text-gray-500 mb-4">Help us improve by sharing your experience with events you've attended</p>
+                  <Button asChild>
+                    <Link href="/feedback">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Go to Feedback
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

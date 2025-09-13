@@ -27,8 +27,13 @@ export const GET = withRole(["participant", "organizer", "admin"])(
 
       // Get user notifications
       console.log("Fetching notifications for userId:", resolvedUserId)
+      
+      // Try both string and ObjectId formats for userId to handle different storage formats
       const userNotifications = await notifications.find({
-        userId: resolvedUserId
+        $or: [
+          { userId: resolvedUserId },
+          { userId: new ObjectId(resolvedUserId) }
+        ]
       }).sort({ createdAt: -1 }).limit(50).toArray()
 
       console.log("Found notifications:", userNotifications.length)
@@ -69,7 +74,10 @@ export const POST = withRole(["participant", "organizer", "admin"])(
       await notifications.updateOne(
         { 
           _id: new ObjectId(notificationId),
-          userId: resolvedUserId 
+          $or: [
+            { userId: resolvedUserId },
+            { userId: new ObjectId(resolvedUserId) }
+          ]
         },
         { $set: { isRead: true, readAt: new Date() } }
       )

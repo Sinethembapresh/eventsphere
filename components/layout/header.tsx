@@ -102,6 +102,20 @@ export function Header() {
     return () => window.removeEventListener("storage", handleStorageChange)
   }, [])
 
+  // Auto-refresh notifications every 30 seconds when logged in
+  useEffect(() => {
+    if (!isLoggedIn) return
+
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    const interval = setInterval(() => {
+      fetchNotifications(token)
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(interval)
+  }, [isLoggedIn])
+
   const fetchNotifications = async (token: string) => {
     try {
       console.log("Fetching notifications with token:", token ? "present" : "missing")

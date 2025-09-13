@@ -159,6 +159,8 @@ export function NotificationCenter({ isOpen, onClose, notifications, onNotificat
                       credentials: "include"
                     }).then(res => res.json()).then(data => {
                       console.log("Refreshed notifications:", data)
+                      // Trigger a page refresh to update the notification count
+                      window.location.reload()
                     })
                   }
                 }}
