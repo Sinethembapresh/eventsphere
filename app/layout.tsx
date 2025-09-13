@@ -52,7 +52,7 @@ export default function RootLayout({
                     rel="noopener noreferrer"
                     className="hover:text-pink-500 transition underline"
                   >
-                    Johannesburg, South Africa
+                    Johannesburg, Africa
                   </a>
                 </div>
               </div>
