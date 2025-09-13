@@ -6,6 +6,8 @@ import { UserManagement } from "@/components/admin/user-management";
 import { EventApproval } from "@/components/admin/event-approval";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Users,
   Calendar,
@@ -232,18 +234,31 @@ export default function AdminDashboard() {
               {safeAnalytics.events.pending > 0 && (
                 <Card className="border-orange-200 bg-orange-50">
                   <CardContent className="p-6">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-orange-600" />
-                      <div>
-                        <h3 className="font-medium text-orange-800">
-                          {safeAnalytics.events.pending} Event
-                          {safeAnalytics.events.pending > 1 ? "s" : ""} Pending
-                          Review
-                        </h3>
-                        <p className="text-sm text-orange-700">
-                          Review and approve submitted events
-                        </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-orange-600" />
+                        <div>
+                          <h3 className="font-medium text-orange-800">
+                            {safeAnalytics.events.pending} Event
+                            {safeAnalytics.events.pending > 1 ? "s" : ""} Pending
+                            Review
+                          </h3>
+                          <p className="text-sm text-orange-700">
+                            Review and approve submitted events
+                          </p>
+                        </div>
                       </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-orange-300 text-orange-800 hover:bg-orange-100"
+                        onClick={() => {
+                          const eventsTab = document.querySelector('[value="events"]') as HTMLElement
+                          eventsTab?.click()
+                        }}
+                      >
+                        Review Events
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -261,6 +276,33 @@ export default function AdminDashboard() {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
+              {/* Pending Events Quick View */}
+              {safeAnalytics.events.pending > 0 && (
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-orange-800 flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Pending Events ({safeAnalytics.events.pending})
+                    </CardTitle>
+                    <p className="text-sm text-orange-700">
+                      Events awaiting your approval. Click "Review Events" tab to manage them.
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      variant="outline" 
+                      className="border-orange-300 text-orange-800 hover:bg-orange-100"
+                      onClick={() => {
+                        const eventsTab = document.querySelector('[value="events"]') as HTMLElement
+                        eventsTab?.click()
+                      }}
+                    >
+                      Review All Pending Events
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Category Distribution */}
                 <Card>
@@ -364,7 +406,21 @@ export default function AdminDashboard() {
               <UserManagement />
             </TabsContent>
 
-            <TabsContent value="events">
+            <TabsContent value="events" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Event Management</h2>
+                  <p className="text-gray-600 mt-1">Review, approve, and manage all events</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-orange-600 border-orange-300">
+                    {safeAnalytics.events.pending} Pending
+                  </Badge>
+                  <Badge variant="outline" className="text-green-600 border-green-300">
+                    {safeAnalytics.events.approved} Approved
+                  </Badge>
+                </div>
+              </div>
               <EventApproval />
             </TabsContent>
 

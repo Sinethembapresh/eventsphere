@@ -121,8 +121,8 @@ export function EventCard({ event, showActions = true, userRole, className }: Ev
   }, [event._id])
 
   const handleJoin = async () => {
-    if (userRole && userRole !== "participant" && userRole !== "student") {
-      toast({ title: "Not allowed", description: "Only students can join events", variant: "destructive" })
+    if (userRole && userRole !== "participant") {
+      toast({ title: "Not allowed", description: "Only participants can join events", variant: "destructive" })
       return
     }
 
@@ -149,7 +149,7 @@ export function EventCard({ event, showActions = true, userRole, className }: Ev
       }
 
       if (res.status === 403) {
-        toast({ title: "Not allowed", description: "Only students can join events", variant: "destructive" })
+        toast({ title: "Not allowed", description: "Only participants can join events", variant: "destructive" })
         return
       }
 
@@ -159,6 +159,26 @@ export function EventCard({ event, showActions = true, userRole, className }: Ev
       }
 
       toast({ title: "Joined", description: "Successfully registered for event" })
+      
+      // Refresh registration status after successful join
+      const checkStatus = async () => {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+        if (!token) return
+        
+        try {
+          const res = await fetch(`/api/events/${event._id}/register`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: "include",
+          })
+          if (res.status === 401) return
+          const data = await res.json().catch(() => ({}))
+          setIsRegistered(!!data?.registered)
+        } catch {
+          // Ignore errors in status check
+        }
+      }
+      checkStatus()
     } catch (e: any) {
       toast({ title: "Unable to join", description: e.message || "Please try again later", variant: "destructive" })
     } finally {
@@ -208,10 +228,15 @@ export function EventCard({ event, showActions = true, userRole, className }: Ev
           {event.maxParticipants && (
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gray-400" />
-              <span>
+              <span className={isRegistered ? "font-semibold text-blue-600" : ""}>
                 {event.currentParticipants}/{event.maxParticipants} participants
               </span>
-              {isEventFull && (
+              {isRegistered && (
+                <Badge variant="default" className="text-xs font-medium px-2.5 py-0.5 bg-blue-100 text-blue-800">
+                  You're in!
+                </Badge>
+              )}
+              {isEventFull && !isRegistered && (
                 <Badge variant="destructive" className="text-xs font-medium px-2.5 py-0.5">
                   Full
                 </Badge>
@@ -256,17 +281,11 @@ export function EventCard({ event, showActions = true, userRole, className }: Ev
 
             {isRegistered ? (
               <Button 
-                className="flex-1 bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium" 
+                className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-medium border-green-200" 
                 disabled 
-                title="Registered"
+                title="You are registered for this event"
               >
-                {(() => {
-                  const today = new Date()
-                  const eventDate = new Date(event.date)
-                  const ms = eventDate.getTime() - today.getTime()
-                  const days = Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)))
-                  return `${days} day${days === 1 ? "" : "s"} left`
-                })()}
+                ✓ Registered
               </Button>
             ) : (
               <Button

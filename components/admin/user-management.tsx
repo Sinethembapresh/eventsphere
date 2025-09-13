@@ -12,14 +12,16 @@ import { useToast } from "@/hooks/use-toast"
 
 interface User {
   _id: string
-  name: string
-  email: string
+  userName: string
+  userEmail: string
   role: string
   department?: string
   enrollmentNumber?: string
-  isApproved: boolean
-  isActive: boolean
-  createdAt: string
+  institutionalId?: string
+  phoneNumber?: string
+  isApproved?: boolean
+  isActive?: boolean
+  createdAt?: string
   lastLogin?: string
 }
 
@@ -42,18 +44,28 @@ export function UserManagement() {
   const fetchUsers = async () => {
     setLoading(true)
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
       const params = new URLSearchParams({
         ...(filters.search && { search: filters.search }),
         ...(filters.role !== "all" && { role: filters.role }),
         ...(filters.status !== "all" && { status: filters.status }),
       })
 
-      const response = await fetch(`/api/admin/users?${params}`)
+      const response = await fetch(`/api/admin/users?${params}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+      
       if (response.ok) {
         const data = await response.json()
         setUsers(data.users)
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
     } catch (error) {
+      console.error("Fetch users error:", error)
       toast({
         title: "Error",
         description: "Failed to fetch users",
@@ -67,9 +79,13 @@ export function UserManagement() {
   const handleUserAction = async (userId: string, action: string, data?: any) => {
     setActionLoading(userId)
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(data),
       })
 
@@ -80,9 +96,10 @@ export function UserManagement() {
         })
         fetchUsers()
       } else {
-        throw new Error("Failed to update user")
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
     } catch (error) {
+      console.error("User action error:", error)
       toast({
         title: "Error",
         description: `Failed to ${action} user`,
@@ -106,7 +123,8 @@ export function UserManagement() {
     }
   }
 
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | undefined) => {
+    if (!date) return "N/A"
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -114,13 +132,82 @@ export function UserManagement() {
     })
   }
 
+  // Calculate user counts by role
+  const userCounts = users.reduce((acc, user) => {
+    acc[user.role] = (acc[user.role] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>User Management</CardTitle>
+        
+        {/* User Count Summary */}
+        <div className="flex flex-wrap gap-4 mt-4">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-muted-foreground">
+              Participants: {userCounts.participant || 0}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+            <span className="text-sm text-muted-foreground">
+              Organizers: {userCounts.organizer || 0}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+            <span className="text-sm text-muted-foreground">
+              Admins: {userCounts.admin || 0}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+            <span className="text-sm text-muted-foreground">
+              Total: {users.length}
+            </span>
+          </div>
+        </div>
+
+        {/* Quick Filter Buttons */}
+        <div className="flex flex-wrap gap-2 mt-4">
+          <Button
+            variant={filters.role === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilters(prev => ({ ...prev, role: "all" }))}
+          >
+            All Users
+          </Button>
+          <Button
+            variant={filters.role === "participant" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilters(prev => ({ ...prev, role: "participant" }))}
+            className="bg-green-100 text-green-800 hover:bg-green-200"
+          >
+            Participants Only
+          </Button>
+          <Button
+            variant={filters.role === "organizer" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilters(prev => ({ ...prev, role: "organizer" }))}
+            className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+          >
+            Organizers Only
+          </Button>
+          <Button
+            variant={filters.role === "admin" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilters(prev => ({ ...prev, role: "admin" }))}
+            className="bg-red-100 text-red-800 hover:bg-red-200"
+          >
+            Admins Only
+          </Button>
+        </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 mt-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -184,10 +271,23 @@ export function UserManagement() {
                   <TableRow key={user._id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{user.name}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {user.userName}
+                          {user.role === "participant" && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                              Participant
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">{user.userEmail}</div>
                         {user.enrollmentNumber && (
                           <div className="text-xs text-muted-foreground">ID: {user.enrollmentNumber}</div>
+                        )}
+                        {user.institutionalId && (
+                          <div className="text-xs text-muted-foreground">Institution ID: {user.institutionalId}</div>
+                        )}
+                        {user.phoneNumber && (
+                          <div className="text-xs text-muted-foreground">Phone: {user.phoneNumber}</div>
                         )}
                       </div>
                     </TableCell>
@@ -202,10 +302,10 @@ export function UserManagement() {
 
                     <TableCell>
                       <div className="flex flex-col gap-1">
-                        <Badge variant={user.isActive ? "default" : "secondary"}>
-                          {user.isActive ? "Active" : "Inactive"}
+                        <Badge variant={user.isActive !== false ? "default" : "secondary"}>
+                          {user.isActive !== false ? "Active" : "Inactive"}
                         </Badge>
-                        {user.role === "organizer" && !user.isApproved && (
+                        {user.role === "organizer" && user.isApproved === false && (
                           <Badge variant="outline" className="text-yellow-600">
                             Pending
                           </Badge>
@@ -217,7 +317,7 @@ export function UserManagement() {
 
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {user.role === "organizer" && !user.isApproved && (
+                        {user.role === "organizer" && user.isApproved === false && (
                           <>
                             <Button
                               size="sm"
@@ -244,13 +344,13 @@ export function UserManagement() {
                           size="sm"
                           variant="outline"
                           onClick={() =>
-                            handleUserAction(user._id, user.isActive ? "deactivated" : "activated", {
-                              isActive: !user.isActive,
+                            handleUserAction(user._id, user.isActive !== false ? "deactivated" : "activated", {
+                              isActive: user.isActive === false,
                             })
                           }
                           disabled={actionLoading === user._id}
                         >
-                          {user.isActive ? (
+                          {user.isActive !== false ? (
                             <>
                               <UserX className="h-3 w-3 mr-1" />
                               Deactivate

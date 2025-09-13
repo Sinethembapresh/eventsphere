@@ -1,18 +1,19 @@
 export interface User {
   _id?: string
-  name: string
-  email: string
+  userName: string
+  userEmail: string
   password: string
+  phoneNumber?: string
   role: "normal" | "participant" | "organizer" | "admin"
   department?: string
   enrollmentNumber?: string
   institutionalId?: string
   isApproved?: boolean
   twoFactorEnabled?: boolean
-  createdAt: Date
-  updatedAt: Date
+  createdAt?: Date
+  updatedAt?: Date
   lastLogin?: Date
-  isActive: boolean
+  isActive?: boolean
 }
 
 export interface UserProfile {

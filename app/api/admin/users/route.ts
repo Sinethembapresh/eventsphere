@@ -32,10 +32,11 @@ export const GET = withRole(["admin"])(async (req: NextRequest) => {
 
     if (search) {
       filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+        { userName: { $regex: search, $options: "i" } },
+        { userEmail: { $regex: search, $options: "i" } },
         { department: { $regex: search, $options: "i" } },
         { enrollmentNumber: { $regex: search, $options: "i" } },
+        { institutionalId: { $regex: search, $options: "i" } },
       ]
     }
 
