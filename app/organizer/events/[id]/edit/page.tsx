@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
+import { Upload, X, Image as ImageIcon, Link as LinkIcon } from "lucide-react"
 
 export default function EditEventPage() {
   const params = useParams()
@@ -17,6 +18,9 @@ export default function EditEventPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<any>({})
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadMethod, setUploadMethod] = useState<'url' | 'file'>('url')
 
   const authHeaders = () => {
     const headers: Record<string, string> = { "Content-Type": "application/json" }
@@ -42,7 +46,13 @@ export default function EditEventPage() {
           time: data.time || "",
           endTime: data.endTime || "",
           maxParticipants: data.maxParticipants ?? "",
+          imageUrl: data.media?.images?.[0] || "",
         })
+        
+        // Set image preview if there's an existing image
+        if (data.media?.images?.[0]) {
+          setImagePreview(data.media.images[0])
+        }
       } catch (e: any) {
         toast({ title: "Error", description: e.message || "Failed to load event" })
         router.back()
@@ -58,7 +68,55 @@ export default function EditEventPage() {
     setForm((p: any) => ({ ...p, [name]: value }))
   }
 
-  const buildPayload = () => {
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value
+    setForm((prev: any) => ({ ...prev, imageUrl: url }))
+    if (url) {
+      setImagePreview(url)
+    } else {
+      setImagePreview(null)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file (JPEG, PNG, GIF, etc.)",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive"
+        })
+        return
+      }
+
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    setForm((prev: any) => ({ ...prev, imageUrl: "" }))
+  }
+
+  const buildPayload = async () => {
     const payload: Record<string, any> = {}
     if (form.title?.trim()) payload.title = form.title.trim()
     if (form.description?.trim()) payload.description = form.description.trim()
@@ -71,6 +129,25 @@ export default function EditEventPage() {
       const n = Number(form.maxParticipants)
       if (!Number.isNaN(n)) payload.maxParticipants = n
     }
+    
+    // Handle image
+    let imageUrl = form.imageUrl
+    if (imageFile && !imageUrl) {
+      const reader = new FileReader()
+      imageUrl = await new Promise<string>((resolve) => {
+        reader.onload = (e) => resolve(e.target?.result as string)
+        reader.readAsDataURL(imageFile)
+      })
+    }
+    
+    if (imageUrl) {
+      payload.media = {
+        images: [imageUrl],
+        videos: [],
+        documents: []
+      }
+    }
+    
     return payload
   }
 
@@ -79,7 +156,7 @@ export default function EditEventPage() {
     if (saving) return
     setSaving(true)
     try {
-      const body = buildPayload()
+      const body = await buildPayload()
       const res = await fetch(`/api/events/${params.id}`, {
         method: "PUT",
         headers: authHeaders(),
@@ -120,6 +197,105 @@ export default function EditEventPage() {
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" name="description" value={form.description || ""} onChange={handleChange} required />
+            </div>
+
+            {/* Event Image */}
+            <div className="space-y-4">
+              <Label>Event Image</Label>
+              
+              {/* Upload Method Selection */}
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant={uploadMethod === 'url' ? 'default' : 'outline'}
+                  onClick={() => setUploadMethod('url')}
+                  className="flex items-center gap-2"
+                >
+                  <LinkIcon className="h-4 w-4" />
+                  Image URL
+                </Button>
+                <Button
+                  type="button"
+                  variant={uploadMethod === 'file' ? 'default' : 'outline'}
+                  onClick={() => setUploadMethod('file')}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload File
+                </Button>
+              </div>
+
+              {/* Image URL Input */}
+              {uploadMethod === 'url' && (
+                <div className="space-y-2">
+                  <Input
+                    type="url"
+                    placeholder="https://example.com/event-image.jpg"
+                    value={form.imageUrl || ""}
+                    onChange={handleImageUrlChange}
+                  />
+                  <p className="text-sm text-gray-500">
+                    Enter a direct URL to an image (JPEG, PNG, GIF, WebP)
+                  </p>
+                </div>
+              )}
+
+              {/* File Upload */}
+              {uploadMethod === 'file' && (
+                <div className="space-y-2">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      {imageFile ? (
+                        <div className="space-y-2">
+                          <ImageIcon className="h-8 w-8 text-green-500 mx-auto" />
+                          <p className="text-sm font-medium">{imageFile.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {(imageFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Upload className="h-8 w-8 text-gray-400 mx-auto" />
+                          <p className="text-sm font-medium">Click to upload image</p>
+                          <p className="text-xs text-gray-500">
+                            JPEG, PNG, GIF, WebP (max 5MB)
+                          </p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="space-y-2">
+                  <Label>Preview</Label>
+                  <div className="relative inline-block">
+                    <img
+                      src={imagePreview}
+                      alt="Event preview"
+                      className="w-48 h-32 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                      onClick={removeImage}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>

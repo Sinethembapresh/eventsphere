@@ -200,6 +200,21 @@ export function EventCard({ event, showActions = true, userRole, className }: Ev
         </div>
       </CardHeader>
 
+      {/* Event Image */}
+      {event.media?.images && event.media.images.length > 0 && (
+        <div className="px-6 pt-0 pb-4">
+          <img
+            src={event.media.images[0]}
+            alt={event.title}
+            className="w-full h-48 object-cover rounded-lg"
+            onError={(e) => {
+              // Hide image if it fails to load
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        </div>
+      )}
+
       <CardContent className="flex-1 pt-4 pb-4">
         <p className="text-sm text-gray-500 mb-4 line-clamp-3 leading-relaxed">{event.description}</p>
 

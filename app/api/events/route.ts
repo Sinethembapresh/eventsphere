@@ -77,7 +77,6 @@ export async function GET(req: NextRequest) {
 export const POST = withRole(["organizer", "admin"])(async (req: NextRequest, user) => {
   try {
     const eventData = await req.json()
-
     const {
       title,
       description,
@@ -93,6 +92,7 @@ export const POST = withRole(["organizer", "admin"])(async (req: NextRequest, us
       requirements,
       prizes,
       contactInfo,
+      media,
     } = eventData
 
     // Validate required fields
@@ -133,7 +133,7 @@ export const POST = withRole(["organizer", "admin"])(async (req: NextRequest, us
       requirements: requirements || [],
       prizes: prizes || [],
       contactInfo: contactInfo || { email: user.email },
-      media: { images: [], videos: [], documents: [] },
+      media: media || { images: [], videos: [], documents: [] },
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
