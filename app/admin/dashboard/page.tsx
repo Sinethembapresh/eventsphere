@@ -7,6 +7,7 @@ import { StatsCard } from "@/components/dashboard/stats-card";
 import { UserManagement } from "@/components/admin/user-management";
 import { EventApproval } from "@/components/admin/event-approval";
 import { NotificationFix } from "@/components/admin/notification-fix";
+import GalleryManagement from "@/components/admin/gallery-management";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -345,10 +346,11 @@ export default function AdminDashboard() {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="users">User Management</TabsTrigger>
               <TabsTrigger value="events">Event Approval</TabsTrigger>
+              <TabsTrigger value="gallery">Gallery</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
@@ -500,6 +502,19 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <EventApproval />
+            </TabsContent>
+
+            <TabsContent value="gallery" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <ImageIcon className="h-6 w-6" />
+                    Gallery Management
+                  </h2>
+                  <p className="text-gray-600 mt-1">Upload and manage gallery images by category</p>
+                </div>
+              </div>
+              <GalleryManagement />
             </TabsContent>
 
             <TabsContent value="notifications" className="space-y-6">

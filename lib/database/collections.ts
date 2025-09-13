@@ -60,3 +60,8 @@ export async function getAnalyticsCollection(): Promise<Collection> {
   const database = await getDatabase()
   return database.collection("analytics")
 }
+
+export async function getGalleryCollection(): Promise<Collection> {
+  const database = await getDatabase()
+  return database.collection("gallery")
+}

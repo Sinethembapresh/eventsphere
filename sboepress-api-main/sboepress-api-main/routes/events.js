@@ -1,80 +1,205 @@
 const express = require("express");
 const router = express.Router();
-const Event = require("../models/Event"); 
-const authenticate = require("../middlewares/auth-middleware");
+const Event = require("../models/Event");
+const authMiddleware = require("../middlewares/auth-middleware");
 
-router.use(authenticate);
-
-// 📌 GET all events (newest first)
+// Get all events with participants
 router.get("/", async (req, res) => {
   try {
-    const events = await Event.find().sort({ createdAt: -1 }).populate("organizer_id", "full_name email");
-    res.status(200).json(events);
-  } catch (err) {
-    console.error("Error fetching events:", err.message);
-    res.status(500).json({ error: "Failed to fetch events" });
-  }
-});
+    const events = await Event.find()
+      .populate("organizer", "full_name email")
+      .populate("participants.user", "full_name email");
 
-// 📌 CREATE a new event
-router.post("/create", async (req, res) => {
-  const { title, description, category, date, time, venue, maxParticipants } = req.body;
+    const eventsWithParticipantCount = events.map(event => ({
+      ...event.toObject(),
+      participantCount: event.participants.length
+    }));
 
-  try {
-    const newEvent = new Event({
-      title,
-      description,
-      category,
-      date,
-      time,
-      venue,
-      organizer_id: req.user._id, // Set from authenticated user
-      maxParticipants,
-      status: "pending", // default until admin approves
+    res.status(200).json({
+      success: true,
+      data: eventsWithParticipantCount
     });
-
-    await newEvent.save();
-
-    res.status(201).json({ message: "Event created successfully", eventId: newEvent._id });
-  } catch (err) {
-    console.error("Error creating event:", err.message);
-    res.status(500).json({ error: "Failed to create event" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// 📌 GET single event by ID
+// Get single event with participants
 router.get("/:id", async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id).populate("organizer_id", "full_name email");
-    if (!event) return res.status(404).json({ message: "Event not found" });
-    res.json(event);
-  } catch (err) {
-    console.error("Error fetching event:", err.message);
-    res.status(500).json({ error: "Failed to fetch event" });
+    const event = await Event.findById(req.params.id)
+      .populate("organizer", "full_name email")
+      .populate("participants.user", "full_name email")
+      .lean();
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found"
+      });
+    }
+
+    const formattedEvent = {
+      ...event,
+      participantCount: event.participants?.length || 0,
+      participants:
+        event.participants?.map(p => ({
+          id: p.user._id,
+          name: p.user.full_name,
+          email: p.user.email,
+          status: p.status,
+          registrationDate: p.registrationDate
+        })) || []
+    };
+
+    res.status(200).json({
+      success: true,
+      data: formattedEvent
+    });
+  } catch (error) {
+    console.error("Error fetching event:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 
-
-router.put("/:id", async (req, res) => {
+// Register for event
+router.post("/:id/register", authMiddleware, async (req, res) => {
   try {
-    const updated = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updated) return res.status(404).json({ message: "Event not found" });
-    res.json({ message: "Event updated successfully", event: updated });
-  } catch (err) {
-    console.error("Error updating event:", err.message);
-    res.status(500).json({ error: "Failed to update event" });
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found"
+      });
+    }
+
+    const alreadyRegistered = event.participants.some(
+      p => p.user.toString() === req.user.id
+    );
+
+    if (alreadyRegistered) {
+      return res.status(400).json({
+        success: false,
+        message: "Already registered for this event"
+      });
+    }
+
+    event.participants.push({
+      user: req.user.id,
+      status: "registered",
+      registrationDate: new Date()
+    });
+
+    await event.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Successfully registered for event"
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 
-// 📌 DELETE event
-router.delete("/:id", async (req, res) => {
+// Create event
+router.post("/", authMiddleware, async (req, res) => {
   try {
-    const deleted = await Event.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: "Event not found" });
-    res.json({ message: "Event deleted successfully" });
-  } catch (err) {
-    console.error("Error deleting event:", err.message);
-    res.status(500).json({ error: "Failed to delete event" });
+    const event = new Event({
+      ...req.body,
+      organizer: req.user.id
+    });
+    const savedEvent = await event.save();
+    res.status(201).json({ success: true, data: savedEvent });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update event
+router.put("/:id", authMiddleware, async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const updates = req.body;
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found"
+      });
+    }
+
+    const isAdmin = userRole === "admin";
+    const isOrganizer = userRole === "organizer";
+    const isEventCreator = event.organizer.toString() === userId;
+    const canEdit = isAdmin || (isOrganizer && isEventCreator);
+
+    if (!canEdit) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to edit this event"
+      });
+    }
+
+    const allowedUpdates = [
+      "title",
+      "description",
+      "date",
+      "location",
+      "capacity",
+      "price",
+      "category",
+      "image"
+    ];
+
+    const sanitizedUpdates = {};
+    for (const key of Object.keys(updates)) {
+      if (allowedUpdates.includes(key)) {
+        sanitizedUpdates[key] = updates[key];
+      }
+    }
+
+    const updatedEvent = await Event.findByIdAndUpdate(
+      eventId,
+      { ...sanitizedUpdates, updatedAt: new Date() },
+      { new: true, runValidators: true, context: "query" }
+    ).populate("organizer", "full_name email");
+
+    res.json({
+      success: true,
+      data: updatedEvent,
+      message: "Event updated successfully"
+    });
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error updating event"
+    });
+  }
+});
+
+// Delete event (only once!)
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    const event = await Event.findByIdAndDelete(req.params.id);
+    if (!event) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Event not found" });
+    }
+    res.json({ success: true, message: "Event deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
