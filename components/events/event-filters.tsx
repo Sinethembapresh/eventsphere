@@ -3,12 +3,17 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Filter, X } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Calendar, MapPin, Users, Search, Filter, X } from "lucide-react"
+import { DatePickerWithRange } from "@/components/ui/date-range-picker"
+import { addDays } from "date-fns"
 
 interface EventFiltersProps {
   onFiltersChange: (filters: EventFilters) => void
+  onSearch: (query: string) => void
   initialFilters?: EventFilters
 }
 
@@ -16,227 +21,280 @@ export interface EventFilters {
   search: string
   category: string
   department: string
+  venue: string
+  dateRange: { from: Date; to: Date } | undefined
+  maxParticipants: string
   status: string
   sortBy: string
   sortOrder: string
+  tags: string[]
 }
 
 const categories = [
-  { value: "all", label: "All Categories" },
-  { value: "Technical", label: "Technical" },
-  { value: "Cultural", label: "Cultural" },
-  { value: "Sports", label: "Sports" },
-  { value: "Academic", label: "Academic" },
-  { value: "Social", label: "Social" },
-  { value: "Career", label: "Career" },
+  "Technical", "Cultural", "Sports", "Academic", "Social", "Career"
 ]
 
 const departments = [
-  { value: "all", label: "All Departments" },
-  { value: "Computer Science", label: "Computer Science" },
-  { value: "Information Technology", label: "Information Technology" },
-  { value: "Electronics & Communication", label: "Electronics & Communication" },
-  { value: "Mechanical Engineering", label: "Mechanical Engineering" },
-  { value: "Civil Engineering", label: "Civil Engineering" },
-  { value: "Electrical Engineering", label: "Electrical Engineering" },
-  { value: "Business Administration", label: "Business Administration" },
-  { value: "Commerce", label: "Commerce" },
-  { value: "Arts & Humanities", label: "Arts & Humanities" },
+  "Computer Science", "Electronics", "Mechanical", "Civil", 
+  "Electrical", "Chemical", "Management", "All"
+]
+
+const venues = [
+  "Auditorium", "Seminar Hall", "Lab", "Sports Complex", 
+  "Library", "Cafeteria", "Outdoor", "All"
 ]
 
 const statusOptions = [
-  { value: "approved", label: "Approved Events" },
-  { value: "pending", label: "Pending Approval" },
-  { value: "completed", label: "Completed Events" },
-  { value: "all", label: "All Status" },
+  "approved", "pending", "completed", "cancelled"
 ]
 
-const sortOptions = [
-  { value: "date-asc", label: "Date (Earliest First)" },
-  { value: "date-desc", label: "Date (Latest First)" },
-  { value: "title-asc", label: "Title (A-Z)" },
-  { value: "title-desc", label: "Title (Z-A)" },
-  { value: "created-desc", label: "Recently Added" },
-]
+export function EventFilters({ onFiltersChange, onSearch, initialFilters }: EventFiltersProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState(initialFilters?.search || "")
+  const [filters, setFilters] = useState<EventFilters>({
+    search: initialFilters?.search || "",
+    category: initialFilters?.category || "",
+    department: initialFilters?.department || "",
+    venue: initialFilters?.venue || "",
+    dateRange: initialFilters?.dateRange || undefined,
+    maxParticipants: initialFilters?.maxParticipants || "",
+    status: initialFilters?.status || "",
+    sortBy: initialFilters?.sortBy || "date",
+    sortOrder: initialFilters?.sortOrder || "asc",
+    tags: initialFilters?.tags || []
+  })
 
-export function EventFilters({ onFiltersChange, initialFilters }: EventFiltersProps) {
-  const [filters, setFilters] = useState<EventFilters>(
-    initialFilters || {
-      search: "",
-      category: "all",
-      department: "all",
-      status: "approved",
-      sortBy: "date",
-      sortOrder: "asc",
-    },
-  )
-
-  const [showAdvanced, setShowAdvanced] = useState(false)
-
-  const handleFilterChange = (key: keyof EventFilters, value: string) => {
+  const handleFilterChange = (key: keyof EventFilters, value: any) => {
     const newFilters = { ...filters, [key]: value }
     setFilters(newFilters)
     onFiltersChange(newFilters)
   }
 
-  const handleSortChange = (value: string) => {
-    const [sortBy, sortOrder] = value.split("-")
-    const newFilters = { 
-      ...filters, 
-      sortBy, 
-      sortOrder 
-    }
-    setFilters(newFilters)
-    onFiltersChange(newFilters)
+  const handleSearch = () => {
+    onSearch(searchQuery)
   }
 
   const clearFilters = () => {
     const clearedFilters: EventFilters = {
       search: "",
-      category: "all",
-      department: "all",
-      status: "approved",
+      category: "",
+      department: "",
+      venue: "",
+      dateRange: undefined,
+      maxParticipants: "",
+      status: "",
       sortBy: "date",
       sortOrder: "asc",
+      tags: []
     }
     setFilters(clearedFilters)
+    setSearchQuery("")
     onFiltersChange(clearedFilters)
+    onSearch("")
   }
 
-  const hasActiveFilters =
-    filters.search || filters.category !== "all" || filters.department !== "all" || filters.status !== "approved"
+  const activeFiltersCount = Object.values(filters).filter(value => 
+    value !== "" && value !== undefined && 
+    (Array.isArray(value) ? value.length > 0 : true)
+  ).length
 
   return (
-    <Card className="bg-white border border-gray-200 shadow-sm rounded-lg">
-      <CardHeader className="pb-4 px-6 pt-6">
+    <Card className="w-full">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Search & Filter Events
+          </CardTitle>
           <div className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-gray-600" />
-            <CardTitle className="text-lg font-semibold text-gray-900">Filter Events</CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
-            {hasActiveFilters && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={clearFilters} 
-                className="text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-400"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Clear
-              </Button>
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary">{activeFiltersCount} filters</Badge>
             )}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-400"
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
             >
-              {showAdvanced ? "Hide" : "Show"} Filters
+              <Filter className="h-4 w-4 mr-2" />
+              {isOpen ? "Hide" : "Show"} Filters
             </Button>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4 px-6 pb-6">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search events, organizers..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange("search", e.target.value)}
-            className="pl-10 h-10 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md text-gray-700 placeholder:text-gray-500"
-          />
+      <CardContent className="space-y-4">
+        {/* Search Bar */}
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Input
+              placeholder="Search events by title, description, or tags..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+          </div>
+          <Button onClick={handleSearch}>
+            <Search className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* Basic Filters */}
-        <div className="space-y-3">
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Category</label>
-            <Select value={filters.category} onValueChange={(value) => handleFilterChange("category", value)}>
-              <SelectTrigger className="h-10 border-gray-300 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-gray-200 rounded-md shadow-lg">
-                {categories.map((category) => (
-                  <SelectItem 
-                    key={category.value} 
-                    value={category.value}
-                    className="text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer"
-                  >
-                    {category.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Sort By</label>
-            <Select
-              value={`${filters.sortBy}-${filters.sortOrder}`}
-              onValueChange={handleSortChange}
+        {/* Quick Filter Tags */}
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <Badge
+              key={category}
+              variant={filters.category === category ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/10"
+              onClick={() => handleFilterChange("category", 
+                filters.category === category ? "" : category
+              )}
             >
-              <SelectTrigger className="h-10 border-gray-300 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-gray-200 rounded-md shadow-lg">
-                {sortOptions.map((option) => (
-                  <SelectItem 
-                    key={option.value} 
-                    value={option.value}
-                    className="text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer"
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              {category}
+            </Badge>
+          ))}
         </div>
 
         {/* Advanced Filters */}
-        {showAdvanced && (
-          <div className="space-y-3 pt-4 border-t border-gray-200">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Department</label>
-              <Select value={filters.department} onValueChange={(value) => handleFilterChange("department", value)}>
-                <SelectTrigger className="h-10 border-gray-300 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md">
-                  <SelectValue placeholder="All Departments" />
+        {isOpen && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
+            {/* Category Filter */}
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={filters.category} onValueChange={(value) => handleFilterChange("category", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 rounded-md shadow-lg">
-                  {departments.map((dept) => (
-                    <SelectItem 
-                      key={dept.value} 
-                      value={dept.value}
-                      className="text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer"
-                    >
-                      {dept.label}
+                <SelectContent>
+                  <SelectItem value="">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Status</label>
-              <Select value={filters.status} onValueChange={(value) => handleFilterChange("status", value)}>
-                <SelectTrigger className="h-10 border-gray-300 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md">
-                  <SelectValue placeholder="All Status" />
+            {/* Department Filter */}
+            <div className="space-y-2">
+              <Label>Department</Label>
+              <Select value={filters.department} onValueChange={(value) => handleFilterChange("department", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 rounded-md shadow-lg">
-                  {statusOptions.map((status) => (
-                    <SelectItem 
-                      key={status.value} 
-                      value={status.value}
-                      className="text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer"
-                    >
-                      {status.label}
+                <SelectContent>
+                  <SelectItem value="">All Departments</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Venue Filter */}
+            <div className="space-y-2">
+              <Label>Venue</Label>
+              <Select value={filters.venue} onValueChange={(value) => handleFilterChange("venue", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Venues" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Venues</SelectItem>
+                  {venues.map((venue) => (
+                    <SelectItem key={venue} value={venue}>
+                      {venue}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="space-y-2">
+              <Label>Date Range</Label>
+              <DatePickerWithRange
+                date={filters.dateRange}
+                onDateChange={(range: any) => handleFilterChange("dateRange", range)}
+              />
+            </div>
+
+            {/* Max Participants Filter */}
+            <div className="space-y-2">
+              <Label>Max Participants</Label>
+              <Select value={filters.maxParticipants} onValueChange={(value) => handleFilterChange("maxParticipants", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Any Size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Any Size</SelectItem>
+                  <SelectItem value="small">Small (1-50)</SelectItem>
+                  <SelectItem value="medium">Medium (51-200)</SelectItem>
+                  <SelectItem value="large">Large (200+)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={filters.status} onValueChange={(value) => handleFilterChange("status", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Status</SelectItem>
+                  {statusOptions.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort By Filter */}
+            <div className="space-y-2">
+              <Label>Sort By</Label>
+              <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange("sortBy", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="title">Title</SelectItem>
+                  <SelectItem value="category">Category</SelectItem>
+                  <SelectItem value="participants">Participants</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort Order Filter */}
+            <div className="space-y-2">
+              <Label>Sort Order</Label>
+              <Select value={filters.sortOrder} onValueChange={(value) => handleFilterChange("sortOrder", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asc">Ascending</SelectItem>
+                  <SelectItem value="desc">Descending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {/* Filter Actions */}
+        {isOpen && (
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Button variant="outline" onClick={clearFilters}>
+              <X className="h-4 w-4 mr-2" />
+              Clear All Filters
+            </Button>
+            <div className="text-sm text-gray-500">
+              {activeFiltersCount} filter{activeFiltersCount !== 1 ? 's' : ''} applied
             </div>
           </div>
         )}

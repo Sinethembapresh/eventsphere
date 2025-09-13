@@ -36,6 +36,30 @@ const adminRoutes = require("./routes/admin-routes/admin.js");
 const eventRoutes = require("./routes/events.js"); // Add this line
 const studentRoutes = require('./routes/student-routes/index.js');
 
+// Middleware
+const authMiddleware = require("./middlewares/auth-middleware.js");
+
+// Role check middleware
+const roleCheck = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+    
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Insufficient permissions"
+      });
+    }
+    
+    next();
+  };
+};
+
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -135,7 +159,7 @@ app.post('/auth/login', async (req, res) => {
 });
 
 // Protected Routes - Add studentRoutes
-app.use('/api/student', authMiddleware, roleCheck(['student']), studentRoutes);
+app.use('/api/student', authMiddleware, roleCheck(['participant']), studentRoutes);
 app.use('/api/admin', authMiddleware, roleCheck(['admin']), adminRoutes);
 app.use('/api/events', authMiddleware, eventRoutes);
 

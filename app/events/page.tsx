@@ -30,11 +30,15 @@ export default function EventsPage() {
   })
   const [filters, setFilters] = useState<EventFiltersType>({
     search: "",
-    category: "all",
-    department: "all",
-    status: "approved",
+    category: "",
+    department: "",
+    venue: "",
+    dateRange: undefined,
+    maxParticipants: "",
+    status: "",
     sortBy: "date",
     sortOrder: "asc",
+    tags: []
   })
   const [userRole, setUserRole] = useState<string>("")
   const router = useRouter()
@@ -49,8 +53,15 @@ export default function EventsPage() {
         limit: pagination.limit.toString(),
         ...(filters.search && { search: filters.search }),
         ...(selectedCategory !== "all" && { category: selectedCategory }),
-        ...(filters.department !== "all" && { department: filters.department }),
-        ...(filters.status !== "all" && { status: filters.status }),
+        ...(filters.category && { category: filters.category }),
+        ...(filters.department && { department: filters.department }),
+        ...(filters.venue && { venue: filters.venue }),
+        ...(filters.status && { status: filters.status }),
+        ...(filters.maxParticipants && { maxParticipants: filters.maxParticipants }),
+        ...(filters.dateRange && { 
+          dateFrom: filters.dateRange.from.toISOString(),
+          dateTo: filters.dateRange.to.toISOString()
+        }),
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
       })
@@ -92,6 +103,10 @@ export default function EventsPage() {
     setFilters(newFilters)
   }
 
+  const handleSearch = (query: string) => {
+    setFilters(prev => ({ ...prev, search: query }))
+  }
+
   const handlePageChange = (page: number) => {
     fetchEvents(page)
   }
@@ -124,7 +139,11 @@ export default function EventsPage() {
           {/* Filters Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-24">
-              <EventFilters onFiltersChange={handleFiltersChange} initialFilters={filters} />
+              <EventFilters 
+                onFiltersChange={handleFiltersChange} 
+                onSearch={handleSearch}
+                initialFilters={filters} 
+              />
             </div>
           </aside>
 
