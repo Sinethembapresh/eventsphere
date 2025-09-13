@@ -72,6 +72,10 @@ export default function GalleryManagement() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   const resetForm = () => {
     setFormData({ title: "", description: "", category: "academic", tags: "" });
     setFile(null);
@@ -215,7 +219,7 @@ export default function GalleryManagement() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h2 className="text-2xl font-bold">Gallery Management</h2>
+        
         <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Add New Image
@@ -327,7 +331,7 @@ export default function GalleryManagement() {
             <select
               name="category"
               value={formData.category}
-              onChange={handleInputChange}
+              onChange={handleSelectChange}
               className="w-full border rounded-md p-2"
             >
               {CATEGORIES.filter((c) => c.value !== "all").map((cat) => (

@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     )
 
     return NextResponse.json({
-      images: images.map(img => ({
+      images: images.map((img: any) => ({
         ...img,
         _id: img._id.toString()
       })),
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 
 // Helper function to get gallery collection
 async function getGalleryCollection() {
-  const { getDatabase } = await import("@/lib/mongodb")
+  const { getDatabase } = await import("@/lib/database/collections")
   const db = await getDatabase()
   return db.collection("gallery")
 }
