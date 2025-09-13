@@ -16,9 +16,13 @@ export const GET = withRole(["organizer", "admin"])(
       const media = await getMediaCollection()
       const userId = (user as any).userId || (user as any).id || (user as any)._id
 
-      // Get organizer's event IDs
+      // Get organizer's event IDs - include events with null organizerId for now
       const organizerEvents = await events.find({
-        organizerId: userId
+        $or: [
+          { organizerId: userId },
+          { organizerId: null }, // Include events with null organizerId for now
+          { organizerEmail: (user as any).email } // Also check by email if available
+        ]
       }).toArray()
 
       const eventIds = organizerEvents.map(e => e._id.toString())

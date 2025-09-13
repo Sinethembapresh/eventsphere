@@ -13,9 +13,20 @@ export const GET = withRole(["organizer", "admin"])(
 
       const events = await getEventsCollection()
       const userId = (user as any).userId || (user as any).id || (user as any)._id
+      const userEmail = (user as any).email
 
-      // Build query
-      const query: any = { organizerId: userId }
+      // Build query - for now, show all events if user is organizer/admin
+      // In production, you'd want to properly link events to organizers
+      const query: any = {}
+      
+      // If user has organizerId, filter by it
+      if (userId) {
+        query.$or = [
+          { organizerId: userId },
+          { organizerId: null }, // Include events with null organizerId for now
+          { organizerEmail: userEmail } // Also check by email if available
+        ]
+      }
       
       if (type === 'pending') {
         query.status = 'pending'

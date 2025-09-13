@@ -27,7 +27,11 @@ export const POST = withRole(["organizer", "admin"])(
       // Verify the organizer owns this event
       const event = await events.findOne({ 
         _id: new ObjectId(registration.eventId),
-        organizerId: userId 
+        $or: [
+          { organizerId: userId },
+          { organizerId: null }, // Allow access to events with null organizerId for now
+          { organizerEmail: (user as any).email }
+        ]
       })
 
       if (!event) {

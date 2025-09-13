@@ -12,10 +12,15 @@ export const GET = withRole(["organizer", "admin"])(
       const users = await getUsersCollection()
 
       const userId = (user as any).userId || (user as any).id || (user as any)._id
+      const userEmail = (user as any).email
 
-      // Get organizer's events
+      // Get organizer's events - include events with null organizerId for now
       const organizerEvents = await events.find({
-        organizerId: userId
+        $or: [
+          { organizerId: userId },
+          { organizerId: null }, // Include events with null organizerId for now
+          { organizerEmail: userEmail } // Also check by email if available
+        ]
       }).toArray()
 
       // Calculate stats

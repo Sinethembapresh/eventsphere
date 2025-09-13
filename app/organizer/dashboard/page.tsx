@@ -269,6 +269,30 @@ export default function OrganizerDashboard() {
     }
   }
 
+  const claimEvent = async (eventId: string) => {
+    try {
+      const response = await fetch(`/api/organizer/events/${eventId}/update-organizer`, {
+        method: 'POST',
+        headers: authHeaders(),
+        credentials: "include"
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Event Claimed",
+          description: "You are now the organizer of this event",
+        })
+        fetchData() // Refresh data
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to claim event",
+        variant: "destructive"
+      })
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -364,12 +388,19 @@ export default function OrganizerDashboard() {
                       <div className="space-y-4">
                         {recentEvents.map((event) => (
                           <div key={event._id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                            <div className="flex items-start justify-between mb-2">
-                              <h4 className="font-medium text-sm leading-tight">{event.title}</h4>
-                              <Badge className={getStatusColor(event.status)} variant="secondary">
-                                {event.status}
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm leading-tight">{event.title}</h4>
+                            {!event.organizerId && (
+                              <Badge variant="outline" className="text-xs mt-1 bg-yellow-50 text-yellow-700 border-yellow-200">
+                                Needs Claiming
                               </Badge>
-                            </div>
+                            )}
+                          </div>
+                          <Badge className={getStatusColor(event.status)} variant="secondary">
+                            {event.status}
+                          </Badge>
+                        </div>
 
                             <div className="text-xs text-muted-foreground mb-3">
                               <p>Date: {formatDate(event.date)}</p>
@@ -385,22 +416,35 @@ export default function OrganizerDashboard() {
                                 <Eye className="h-3 w-3 mr-1" />
                                 View
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => router.push(`/organizer/events/${event._id}/edit`)}
-                              >
-                                <Edit className="h-3 w-3 mr-1" />
-                                Edit
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => generateAttendanceReport(event._id)}
-                              >
-                                <BarChart3 className="h-3 w-3 mr-1" />
-                                Report
-                              </Button>
+                              {!event.organizerId ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => claimEvent(event._id)}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Claim Event
+                                </Button>
+                              ) : (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => router.push(`/organizer/events/${event._id}/edit`)}
+                                  >
+                                    <Edit className="h-3 w-3 mr-1" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => generateAttendanceReport(event._id)}
+                                  >
+                                    <BarChart3 className="h-3 w-3 mr-1" />
+                                    Report
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -611,29 +655,70 @@ export default function OrganizerDashboard() {
 
           {/* Certificates Tab */}
           <TabsContent value="certificates" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Certificate Templates */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Certificate Templates
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">Upload and manage certificate templates</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-6">
+                    <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Upload Templates</h3>
+                    <p className="text-gray-500 mb-4">Create reusable certificate templates for your events</p>
+                    <Button onClick={() => router.push("/organizer/certificates/templates")}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Manage Templates
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Certificate Issuance */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Issue Certificates
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">Issue certificates to eligible participants</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-6">
+                    <Award className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Issue Certificates</h3>
+                    <p className="text-gray-500 mb-4">Generate certificates for participants who attended events</p>
+                    <Button onClick={() => router.push("/organizer/certificates/issue")}>
+                      <Award className="h-4 w-4 mr-2" />
+                      Issue Certificates
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Certificate Management */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Award className="h-5 w-5" />
                   Certificate Management
                 </CardTitle>
-                <p className="text-sm text-gray-600">Upload and issue certificates to eligible participants</p>
+                <p className="text-sm text-gray-600">View and manage issued certificates</p>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Award className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Certificate Management</h3>
-                  <p className="text-gray-500 mb-4">Upload templates and issue certificates to participants who attended and paid fees</p>
-                  <div className="flex gap-4 justify-center">
-                    <Button>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Template
-                    </Button>
-                    <Button variant="outline">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Issue Certificates
-                    </Button>
-                  </div>
+                <div className="text-center py-6">
+                  <Award className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Manage Certificates</h3>
+                  <p className="text-gray-500 mb-4">Track, download, and revoke issued certificates</p>
+                  <Button onClick={() => router.push("/organizer/certificates/manage")}>
+                    <Award className="h-4 w-4 mr-2" />
+                    Manage Certificates
+                  </Button>
                 </div>
               </CardContent>
             </Card>

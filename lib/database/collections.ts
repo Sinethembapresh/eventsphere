@@ -46,6 +46,16 @@ export async function getCertificatesCollection(): Promise<Collection> {
   return database.collection("certificates")
 }
 
+export async function getCertificateTemplatesCollection(): Promise<Collection> {
+  const database = await getDatabase()
+  return database.collection("certificateTemplates")
+}
+
+export async function getCertificateVerificationsCollection(): Promise<Collection> {
+  const database = await getDatabase()
+  return database.collection("certificateVerifications")
+}
+
 export async function getAnalyticsCollection(): Promise<Collection> {
   const database = await getDatabase()
   return database.collection("analytics")

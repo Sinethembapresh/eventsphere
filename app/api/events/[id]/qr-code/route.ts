@@ -22,6 +22,8 @@ export const GET = withRole(["organizer", "admin"])(
         _id: new ObjectId(id),
         $or: [
           { organizerId: user.userId }, // Event organizer
+          { organizerId: null }, // Allow access to events with null organizerId for now
+          { organizerEmail: (user as any).email }, // Check by email
           { isActive: true } // Admin can access any active event
         ]
       })

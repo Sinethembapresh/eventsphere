@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { EventCard } from "@/components/events/event-card"
+import { ParticipantCertificates } from "@/components/certificates/participant-certificates"
 import { useToast } from "@/components/ui/use-toast"
 
 interface DashboardStats {
@@ -344,25 +345,7 @@ export default function ParticipantDashboard() {
 
           {/* Certificates Tab */}
           <TabsContent value="certificates" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  My Certificates
-                </CardTitle>
-                <CardDescription>Download certificates for events you've attended</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Award className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No certificates yet</h3>
-                  <p className="text-gray-500 mb-4">Attend events to earn certificates</p>
-                  <Button asChild>
-                    <Link href="/events">Browse Events</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ParticipantCertificates />
           </TabsContent>
 
           {/* Media Tab */}
