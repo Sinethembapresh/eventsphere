@@ -12,7 +12,7 @@ dotenv.config({
   debug: true,
 });
 
-// Add debug logging
+
 console.log("Environment variables loaded:", {
   MONGODB_URI: process.env.MONGODB_URI,
   NODE_ENV: process.env.NODE_ENV,
