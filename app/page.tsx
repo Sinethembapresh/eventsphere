@@ -149,12 +149,11 @@ export default function HomePage() {
               <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
                   <Users className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <CardTitle>Easy Registration</CardTitle>
+                  <CardTitle>upcoming Events</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-
-                    Register for events with just a few clicks and manage your participation.
+                  Browse and discover past events from all departments and categories.
 
                   </CardDescription>
                 </CardContent>
@@ -165,33 +164,19 @@ export default function HomePage() {
               <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
                   <Trophy className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-                  <CardTitle>Certificates</CardTitle>
+                  <CardTitle>FAQs</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
 
-                    Earn and download certificates for your participation and achievements.
+                  Find answers to common questions about events, registration, and participation.
 
                   </CardDescription>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link href="/events/manage" className="hover:no-underline">
-              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
-                <CardHeader>
-                  <BookOpen className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                  <CardTitle>Event Management</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>
-
-                    Organize and manage events with comprehensive tools for organizers.
-
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            </Link>
+       
           </div>
         </div>
       </section>
