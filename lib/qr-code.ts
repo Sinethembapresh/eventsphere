@@ -1,49 +1,63 @@
-import QRCode from "qrcode"
-import { createHash } from "crypto"
-
-export interface AttendanceData {
-  eventId: string
-  userId: string
-  timestamp: number
-  location?: string
+/**
+ * Generate QR code data for event check-in
+ * Format: "event:eventId:checkin:timestamp"
+ */
+export function generateEventQRCode(eventId: string): string {
+  const timestamp = Date.now()
+  return `event:${eventId}:checkin:${timestamp}`
 }
 
-export class QRCodeService {
-  // Generate QR code for event attendance
-  static async generateEventQR(eventId: string): Promise<string> {
-    const attendanceUrl = `${process.env.NEXT_PUBLIC_APP_URL}/attendance/${eventId}`
-    return await QRCode.toDataURL(attendanceUrl, {
-      errorCorrectionLevel: "M",
-      type: "image/png",
-      quality: 0.92,
-      margin: 1,
-      color: {
-        dark: "#000000",
-        light: "#FFFFFF",
-      },
-    })
+/**
+ * Parse QR code data to extract event information
+ */
+export function parseEventQRCode(qrData: string): {
+  eventId: string
+  timestamp: number
+  isValid: boolean
+} {
+  const parts = qrData.split(':')
+  
+  if (parts.length !== 4 || parts[0] !== 'event' || parts[2] !== 'checkin') {
+    return {
+      eventId: '',
+      timestamp: 0,
+      isValid: false
+    }
   }
 
-  // Generate unique attendance token
-  static generateAttendanceToken(eventId: string, userId: string): string {
-    const data = `${eventId}-${userId}-${Date.now()}`
-    return createHash("sha256").update(data).digest("hex").substring(0, 16)
-  }
+  const eventId = parts[1]
+  const timestamp = parseInt(parts[3])
 
-  // Verify attendance token
-  static verifyAttendanceToken(token: string, eventId: string, userId: string): boolean {
-    // In a real implementation, you'd store and verify tokens in the database
-    return token.length === 16 && /^[a-f0-9]+$/.test(token)
-  }
+  // Validate eventId is a valid MongoDB ObjectId (24 hex characters)
+  const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(eventId)
+  const isValidTimestamp = !isNaN(timestamp) && timestamp > 0
 
-  // Generate certificate QR code
-  static async generateCertificateQR(certificateId: string): Promise<string> {
-    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-certificate/${certificateId}`
-    return await QRCode.toDataURL(verifyUrl, {
-      errorCorrectionLevel: "H",
-      type: "image/png",
-      quality: 0.95,
-      margin: 2,
-    })
+  return {
+    eventId,
+    timestamp,
+    isValid: isValidObjectId && isValidTimestamp
   }
+}
+
+/**
+ * Validate if QR code data is for event check-in
+ */
+export function isValidEventQRCode(qrData: string): boolean {
+  const parsed = parseEventQRCode(qrData)
+  return parsed.isValid
+}
+
+/**
+ * Check if QR code is still valid (not expired)
+ * QR codes are valid for 24 hours from generation
+ */
+export function isQRCodeExpired(qrData: string, maxAgeHours: number = 24): boolean {
+  const parsed = parseEventQRCode(qrData)
+  
+  if (!parsed.isValid) return true
+  
+  const now = Date.now()
+  const ageHours = (now - parsed.timestamp) / (1000 * 60 * 60)
+  
+  return ageHours > maxAgeHours
 }
