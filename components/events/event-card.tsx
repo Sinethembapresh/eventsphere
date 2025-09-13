@@ -131,9 +131,8 @@ export function EventCard({ event, showActions = true, userRole, className }: Ev
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
       if (!token) {
-        // Store the event ID to join after login
-        localStorage.setItem("pendingEventJoin", event._id)
-        router.push(`/auth/login?redirect=join&eventId=${event._id}`)
+        // Redirect to login page
+        router.push("/auth/login")
         return
       }
 
@@ -146,9 +145,8 @@ export function EventCard({ event, showActions = true, userRole, className }: Ev
       })
 
       if (res.status === 401) {
-        // Store the event ID to join after login
-        localStorage.setItem("pendingEventJoin", event._id)
-        router.push(`/auth/login?redirect=join&eventId=${event._id}`)
+        // Redirect to login page
+        router.push("/auth/login")
         return
       }
 

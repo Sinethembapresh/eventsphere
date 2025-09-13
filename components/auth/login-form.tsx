@@ -52,36 +52,29 @@ const handleSubmit = async (e: React.FormEvent) => {
         }))
       }
 
-
-      // Check for pending event join
-      const pendingEventJoin = localStorage.getItem("pendingEventJoin")
-      const urlParams = new URLSearchParams(window.location.search)
-      const redirectEventId = urlParams.get("eventId")
+      // Clear any pending event join since we're going to dashboard
+      localStorage.removeItem("pendingEventJoin")
       
-      if (pendingEventJoin || redirectEventId) {
-        const eventId = pendingEventJoin || redirectEventId
-        // Clear the pending event join
-        localStorage.removeItem("pendingEventJoin")
-        
-        // Redirect to the specific event page with from=login parameter
-        router.push(`/events/${eventId}?from=login`)
-        return
-      }
-
-      // Redirect based on user role
-      switch (data.data.user.role) {
+      // Always redirect to appropriate dashboard based on user role
+      const userRole = data.data.user.role
+      let dashboardUrl = "/events" // fallback
+      
+      switch (userRole) {
         case "admin":
-          router.push("/admin/dashboard")
+          dashboardUrl = "/admin/dashboard"
           break
         case "organizer":
-          router.push("/organizer/dashboard")
+          dashboardUrl = "/organizer/dashboard"
           break
         case "participant":
-          router.push("/dashboard")
+          dashboardUrl = "/dashboard"
           break
         default:
-          router.push("/events")
+          dashboardUrl = "/events"
       }
+      
+      // Use replace to prevent back button issues
+      router.replace(dashboardUrl)
     } else {
       setError(data.message || "Login failed")
     }

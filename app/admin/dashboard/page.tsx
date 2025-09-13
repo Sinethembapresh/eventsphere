@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UserManagement } from "@/components/admin/user-management";
 import { EventApproval } from "@/components/admin/event-approval";
@@ -17,6 +19,7 @@ import {
   MessageSquare,
   AlertTriangle,
   Settings,
+  LogOut,
 } from "lucide-react";
 
 interface AdminAnalytics {
@@ -57,6 +60,8 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchAnalytics();
@@ -87,6 +92,68 @@ export default function AdminDashboard() {
       setError("No analytics data available yet.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Try Express API logout first
+      try {
+        const expressResponse = await fetch("http://localhost:3000/auth/logout", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (expressResponse.ok) {
+          console.log("Logged out via Express API");
+        }
+      } catch (expressError) {
+        console.log("Express API not available, trying Next.js API");
+        
+        // Fallback to Next.js API
+        try {
+          const nextResponse = await fetch("/api/auth/logout", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          });
+          
+          if (nextResponse.ok) {
+            console.log("Logged out via Next.js API");
+          }
+        } catch (nextError) {
+          console.error("Next.js API logout failed:", nextError);
+        }
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Always clear local storage and state regardless of API response
+      localStorage.removeItem("token");
+      
+      // Trigger storage event to update other tabs
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'token',
+        newValue: null,
+        storageArea: localStorage
+      }));
+      
+      // Show success message
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      
+      // Redirect to home page
+      router.push("/");
     }
   };
 
@@ -136,10 +203,18 @@ export default function AdminDashboard() {
                 System overview and management
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="h-8 w-8 bg-red-600 rounded-full flex items-center justify-center">
                 <Settings className="h-4 w-4 text-white" />
               </div>
+              <Button 
+                onClick={handleLogout}
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
           </div>
         </div>
