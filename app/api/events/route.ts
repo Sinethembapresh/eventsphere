@@ -77,6 +77,8 @@ export async function GET(req: NextRequest) {
 export const POST = withRole(["organizer", "admin"])(async (req: NextRequest, user) => {
   try {
     const eventData = await req.json()
+    console.log("Event creation request:", { user, eventData })
+    
     const {
       title,
       description,
@@ -97,18 +99,29 @@ export const POST = withRole(["organizer", "admin"])(async (req: NextRequest, us
 
     // Validate required fields
     if (!title || !description || !category || !venue || !date || !time) {
+      console.log("Missing required fields:", { title, description, category, venue, date, time })
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
     // Validate dates
     const eventDate = new Date(date)
     const regDeadline = new Date(registrationDeadline || date)
+    
+    // Set event date to start of day for comparison
+    const eventDateStartOfDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
+    const todayStartOfDay = new Date()
+    todayStartOfDay.setHours(0, 0, 0, 0)
 
-    if (eventDate <= new Date()) {
+    if (eventDateStartOfDay <= todayStartOfDay) {
+      console.log("Event date validation failed:", { eventDateStartOfDay, todayStartOfDay })
       return NextResponse.json({ error: "Event date must be in the future" }, { status: 400 })
     }
 
-    if (regDeadline >= eventDate) {
+    // Set registration deadline to start of day for comparison
+    const regDeadlineStartOfDay = new Date(regDeadline.getFullYear(), regDeadline.getMonth(), regDeadline.getDate())
+    
+    if (regDeadlineStartOfDay >= eventDateStartOfDay) {
+      console.log("Registration deadline validation failed:", { regDeadlineStartOfDay, eventDateStartOfDay })
       return NextResponse.json({ error: "Registration deadline must be before event date" }, { status: 400 })
     }
 
@@ -118,7 +131,7 @@ export const POST = withRole(["organizer", "admin"])(async (req: NextRequest, us
       title: title.trim(),
       description: description.trim(),
       category,
-      department: department || user.role === "organizer" ? user.department : "",
+      department: department || (user.role === "organizer" ? user.department : ""),
       venue: venue.trim(),
       date: eventDate,
       time,

@@ -40,8 +40,8 @@ export default function CreateEventPage() {
     const { value } = e.target
     setForm((prev) => {
       const newForm = { ...prev, date: value }
-      // If no registration deadline is set, set it to 1 day before the event
-      if (!prev.registrationDeadline && value) {
+      // Always set registration deadline to 1 day before the event
+      if (value) {
         const eventDate = new Date(value)
         const deadline = new Date(eventDate.getTime() - 24 * 60 * 60 * 1000)
         newForm.registrationDeadline = deadline.toISOString().split('T')[0]
@@ -117,11 +117,11 @@ export default function CreateEventPage() {
       return
     }
 
-    // Image validation
-    if (!form.imageUrl && !imageFile) {
-      toast({ title: "Image required", description: "Please provide an event image." })
-      return
-    }
+    // Image validation - make it optional for now
+    // if (!form.imageUrl && !imageFile) {
+    //   toast({ title: "Image required", description: "Please provide an event image." })
+    //   return
+    // }
 
     setSubmitting(true)
     try {
@@ -176,6 +176,8 @@ export default function CreateEventPage() {
         }
       }
 
+      console.log("Sending event creation payload:", payload)
+
 
       // Attach JWT if available (works with both header- and cookie-based auth)
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -191,6 +193,11 @@ export default function CreateEventPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        console.error("Event creation failed:", {
+          status: res.status,
+          statusText: res.statusText,
+          data: data
+        })
         throw new Error(data?.error || "Failed to create event")
       }
 
