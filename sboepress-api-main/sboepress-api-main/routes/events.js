@@ -54,7 +54,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// 📌 UPDATE event
+
 router.put("/:id", async (req, res) => {
   try {
     const updated = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
