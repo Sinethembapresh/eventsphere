@@ -67,7 +67,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 
 if (!MONGODB_URI) {
-  console.error("❌ MONGODB_URI is not defined in environment variables");
+  console.error("MONGODB_URI is not defined in environment variables");
 
   process.exit(1);
 }
@@ -99,7 +99,7 @@ app.use(globalLimiter);
 mongoose
   .connect(MONGODB_URI)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch((e) => console.error("❌ MongoDB error:", e));
+  .catch((e) => console.error(" MongoDB error:", e));
 
 
 // MoMo Collection Routes
@@ -192,7 +192,7 @@ app.get('/api/auth-test', authMiddleware, (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
 
 // Global error handler

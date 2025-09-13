@@ -44,8 +44,29 @@ const handleSubmit = async (e: React.FormEvent) => {
       // Store token in localStorage for axiosInstance
       if (data.data.accessToken) {
         localStorage.setItem("token", data.data.accessToken)
+        // Trigger storage event to update header
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'token',
+          newValue: data.data.accessToken,
+          storageArea: localStorage
+        }))
       }
 
+
+      // Check for pending event join
+      const pendingEventJoin = localStorage.getItem("pendingEventJoin")
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirectEventId = urlParams.get("eventId")
+      
+      if (pendingEventJoin || redirectEventId) {
+        const eventId = pendingEventJoin || redirectEventId
+        // Clear the pending event join
+        localStorage.removeItem("pendingEventJoin")
+        
+        // Redirect to the specific event page with from=login parameter
+        router.push(`/events/${eventId}?from=login`)
+        return
+      }
 
       // Redirect based on user role
       switch (data.data.user.role) {

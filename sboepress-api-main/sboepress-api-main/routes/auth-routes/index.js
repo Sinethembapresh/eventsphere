@@ -10,6 +10,12 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.post("/logout", authenticateMiddleware, (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully"
+  });
+});
 
 router.get("/check-auth", authenticateMiddleware, (req, res) => {
   const user = req.user;
@@ -21,6 +27,41 @@ router.get("/check-auth", authenticateMiddleware, (req, res) => {
       user,
     },
   });
+});
+
+router.get("/me", authenticateMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          _id: user._id,
+          userName: user.userName,
+          userEmail: user.userEmail,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          department: user.department,
+          enrollmentNumber: user.enrollmentNumber,
+          institutionalId: user.institutionalId,
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Get user error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
 });
 
 // New route to get user by ID (public)

@@ -25,7 +25,8 @@ import {
   Send,
   Download,
   Filter,
-  Search
+  Search,
+  LogOut
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
@@ -293,6 +294,68 @@ export default function OrganizerDashboard() {
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      
+      // Try Express API logout first
+      try {
+        const expressResponse = await fetch("http://localhost:3000/auth/logout", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+        
+        if (expressResponse.ok) {
+          console.log("Logged out via Express API")
+        }
+      } catch (expressError) {
+        console.log("Express API not available, trying Next.js API")
+        
+        // Fallback to Next.js API
+        try {
+          const nextResponse = await fetch("/api/auth/logout", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          })
+          
+          if (nextResponse.ok) {
+            console.log("Logged out via Next.js API")
+          }
+        } catch (nextError) {
+          console.error("Next.js API logout failed:", nextError)
+        }
+      }
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      // Always clear local storage and state regardless of API response
+      localStorage.removeItem("token")
+      
+      // Trigger storage event to update other tabs
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'token',
+        newValue: null,
+        storageArea: localStorage
+      }))
+      
+      // Show success message
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      })
+      
+      // Redirect to home page
+      router.push("/")
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -311,10 +374,20 @@ export default function OrganizerDashboard() {
               <h1 className="text-3xl font-bold text-gray-900">Organizer Dashboard</h1>
               <p className="text-gray-600 mt-1">Manage events, registrations, attendance, and more</p>
             </div>
-            <Button onClick={() => router.push("/events/create")} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Event
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button onClick={() => router.push("/events/create")} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Event
+              </Button>
+              <Button 
+                onClick={handleLogout}
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </div>

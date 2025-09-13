@@ -21,12 +21,14 @@ import {
   Camera,
   QrCode,
   TrendingUp,
-  Activity
+  Activity,
+  LogOut
 } from "lucide-react"
 import Link from "next/link"
 import { EventCard } from "@/components/events/event-card"
 import { ParticipantCertificates } from "@/components/certificates/participant-certificates"
 import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 
 interface DashboardStats {
   totalRegistrations: number
@@ -54,6 +56,7 @@ export default function ParticipantDashboard() {
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
   const [notifications, setNotifications] = useState<any[]>([])
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     // Fetch dashboard data
@@ -126,13 +129,87 @@ export default function ParticipantDashboard() {
     })
   }
 
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      
+      // Try Express API logout first
+      try {
+        const expressResponse = await fetch("http://localhost:3000/auth/logout", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+        
+        if (expressResponse.ok) {
+          console.log("Logged out via Express API")
+        }
+      } catch (expressError) {
+        console.log("Express API not available, trying Next.js API")
+        
+        // Fallback to Next.js API
+        try {
+          const nextResponse = await fetch("/api/auth/logout", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          })
+          
+          if (nextResponse.ok) {
+            console.log("Logged out via Next.js API")
+          }
+        } catch (nextError) {
+          console.error("Next.js API logout failed:", nextError)
+        }
+      }
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      // Always clear local storage and state regardless of API response
+      localStorage.removeItem("token")
+      
+      // Trigger storage event to update other tabs
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'token',
+        newValue: null,
+        storageArea: localStorage
+      }))
+      
+      // Show success message
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      })
+      
+      // Redirect to home page
+      router.push("/")
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Participant Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's your event participation overview.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Participant Dashboard</h1>
+              <p className="text-gray-600">Welcome back! Here's your event participation overview.</p>
+            </div>
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Stats Overview */}

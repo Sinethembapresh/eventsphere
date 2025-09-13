@@ -3,8 +3,8 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-import Link from "next/link"
 import { Facebook, Instagram, MapPin, Mail } from "lucide-react"
+import { Header } from "@/components/layout/header"
 
 export const metadata: Metadata = {
   title: 'eventsphere',
@@ -18,19 +18,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} min-h-screen bg-gradient-to-br from-pink-100 via-white to-blue-100`}>
-        {/* Header Navigation - appears on all pages */}
-        <header className="fixed top-0 left-0 w-full z-30 bg-white/70 backdrop-blur-md shadow-sm border-b border-blue-100">
-          <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
-            <Link href="/" className="text-2xl font-extrabold bg-gradient-to-r from-blue-600 via-pink-500 to-blue-400 text-transparent bg-clip-text">EventSphere</Link>
-            <div className="flex items-center gap-6">
-              <Link href="/" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Home</Link>
-              <Link href="/events" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Events</Link>
-              <Link href="/gallery" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Gallery</Link>
-              <Link href="/auth/login" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Login</Link>
-              
-            </div>
-          </nav>
-        </header>
+        {/* Dynamic Header Navigation - appears on all pages */}
+        <Header />
         <div className="pt-20 min-h-screen flex flex-col">
           <div className="flex-1">
             {children}
