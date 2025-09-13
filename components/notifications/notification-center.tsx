@@ -20,53 +20,29 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 
 interface Notification {
-  id: string
+  _id: string
   title: string
   message: string
-  type: 'info' | 'success' | 'warning' | 'error'
-  read: boolean
+  type: 'info' | 'success' | 'warning' | 'error' | 'system_announcement' | 'event_reminder' | 'event_update' | 'registration_confirmed' | 'event_cancelled' | 'certificate_ready'
+  isRead: boolean
   createdAt: string
   eventId?: string
   actionUrl?: string
+  priority?: 'low' | 'medium' | 'high' | 'urgent'
 }
 
 interface NotificationCenterProps {
   isOpen: boolean
   onClose: () => void
+  notifications: any[]
+  onNotificationRead: (notificationId: string) => void
 }
 
-export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([])
+export function NotificationCenter({ isOpen, onClose, notifications, onNotificationRead }: NotificationCenterProps) {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchNotifications()
-    }
-  }, [isOpen])
-
-  const fetchNotifications = async () => {
-    setLoading(true)
-    try {
-      const token = localStorage.getItem("token")
-      if (!token) return
-
-      const response = await fetch("/api/notifications", {
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: "include"
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setNotifications(data.notifications || [])
-      }
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  console.log("NotificationCenter received notifications:", notifications)
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -84,13 +60,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
       })
 
       if (response.ok) {
-        setNotifications(prev => 
-          prev.map(notif => 
-            notif.id === notificationId 
-              ? { ...notif, read: true }
-              : notif
-          )
-        )
+        onNotificationRead(notificationId)
       }
     } catch (error) {
       console.error("Failed to mark notification as read:", error)
@@ -99,9 +69,9 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
 
   const markAllAsRead = async () => {
     try {
-      const unreadNotifications = notifications.filter(n => !n.read)
+      const unreadNotifications = notifications.filter(n => !n.isRead)
       await Promise.all(
-        unreadNotifications.map(notif => markAsRead(notif.id))
+        unreadNotifications.map(notif => markAsRead(notif._id))
       )
       toast({
         title: "All notifications marked as read",
@@ -117,11 +87,21 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'success':
+      case 'registration_confirmed':
+      case 'certificate_ready':
         return <CheckCircle className="h-5 w-5 text-green-500" />
       case 'warning':
+      case 'event_cancelled':
         return <AlertCircle className="h-5 w-5 text-yellow-500" />
       case 'error':
         return <X className="h-5 w-5 text-red-500" />
+      case 'urgent':
+        return <AlertCircle className="h-5 w-5 text-red-500" />
+      case 'system_announcement':
+        return <Bell className="h-5 w-5 text-blue-500" />
+      case 'event_reminder':
+      case 'event_update':
+        return <Calendar className="h-5 w-5 text-blue-500" />
       case 'info':
       default:
         return <Info className="h-5 w-5 text-blue-500" />
@@ -149,7 +129,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
     }
   }
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = notifications.filter(n => !n.isRead).length
 
   if (!isOpen) return null
 
@@ -168,6 +148,23 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
               )}
             </CardTitle>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const token = localStorage.getItem("token")
+                  if (token) {
+                    fetch("/api/notifications", {
+                      headers: { Authorization: `Bearer ${token}` },
+                      credentials: "include"
+                    }).then(res => res.json()).then(data => {
+                      console.log("Refreshed notifications:", data)
+                    })
+                  }
+                }}
+              >
+                Refresh
+              </Button>
               {unreadCount > 0 && (
                 <Button
                   variant="outline"
@@ -203,11 +200,11 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
               <div className="space-y-1">
                 {notifications.map((notification) => (
                   <div
-                    key={notification.id}
+                    key={notification._id}
                     className={`p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors ${
-                      !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                      !notification.isRead ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                     }`}
-                    onClick={() => !notification.read && markAsRead(notification.id)}
+                    onClick={() => !notification.isRead && markAsRead(notification._id)}
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 mt-1">
@@ -216,11 +213,11 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className={`text-sm font-medium ${
-                            !notification.read ? 'text-gray-900' : 'text-gray-700'
+                            !notification.isRead ? 'text-gray-900' : 'text-gray-700'
                           }`}>
                             {notification.title}
                           </h4>
-                          {!notification.read && (
+                          {!notification.isRead && (
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                           )}
                         </div>

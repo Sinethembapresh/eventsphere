@@ -26,9 +26,13 @@ export const GET = withRole(["participant", "organizer", "admin"])(
       }
 
       // Get user notifications
+      console.log("Fetching notifications for userId:", resolvedUserId)
       const userNotifications = await notifications.find({
         userId: resolvedUserId
       }).sort({ createdAt: -1 }).limit(50).toArray()
+
+      console.log("Found notifications:", userNotifications.length)
+      console.log("Sample notification:", userNotifications[0])
 
       return NextResponse.json({ notifications: userNotifications })
     } catch (error) {
@@ -67,7 +71,7 @@ export const POST = withRole(["participant", "organizer", "admin"])(
           _id: new ObjectId(notificationId),
           userId: resolvedUserId 
         },
-        { $set: { read: true, readAt: new Date() } }
+        { $set: { isRead: true, readAt: new Date() } }
       )
 
       return NextResponse.json({ message: "Notification marked as read" })

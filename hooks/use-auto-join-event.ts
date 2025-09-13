@@ -94,3 +94,4 @@ export function useAutoJoinEvent(eventId: string) {
 
   return { isAttemptingJoin, hasAttemptedJoin }
 }
+

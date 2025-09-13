@@ -26,7 +26,8 @@ import {
   Download,
   Filter,
   Search,
-  LogOut
+  LogOut,
+  Bell
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
@@ -83,6 +84,14 @@ export default function OrganizerDashboard() {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<string>("")
+  const [showNotificationForm, setShowNotificationForm] = useState(false)
+  const [notificationForm, setNotificationForm] = useState({
+    title: "",
+    message: "",
+    type: "system_announcement",
+    priority: "medium",
+    targetUsers: "all"
+  })
   const router = useRouter()
   const { toast } = useToast()
 
@@ -356,6 +365,52 @@ export default function OrganizerDashboard() {
     }
   }
 
+  const handleCreateNotification = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) return
+
+      const response = await fetch("/api/organizer/notifications", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(notificationForm),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast({
+          title: "Notification Sent",
+          description: data.message,
+        })
+        setShowNotificationForm(false)
+        setNotificationForm({
+          title: "",
+          message: "",
+          type: "system_announcement",
+          priority: "medium",
+          targetUsers: "all"
+        })
+      } else {
+        const errorData = await response.json()
+        toast({
+          title: "Error",
+          description: errorData.error || "Failed to send notification",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send notification",
+        variant: "destructive"
+      })
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -378,6 +433,14 @@ export default function OrganizerDashboard() {
               <Button onClick={() => router.push("/events/create")} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Event
+              </Button>
+              <Button 
+                onClick={() => setShowNotificationForm(true)}
+                variant="outline"
+                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Send Notification
               </Button>
               <Button 
                 onClick={handleLogout}
@@ -892,6 +955,82 @@ export default function OrganizerDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Notification Creation Modal */}
+      {showNotificationForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Send Notification</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={notificationForm.title}
+                  onChange={(e) => setNotificationForm(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Notification title"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <textarea
+                  value={notificationForm.message}
+                  onChange={(e) => setNotificationForm(prev => ({ ...prev, message: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Notification message"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Target Users</label>
+                <select
+                  value={notificationForm.targetUsers}
+                  onChange={(e) => setNotificationForm(prev => ({ ...prev, targetUsers: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Users</option>
+                  <option value="participants">Participants Only</option>
+                  <option value="organizers">Organizers Only</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                <select
+                  value={notificationForm.priority}
+                  onChange={(e) => setNotificationForm(prev => ({ ...prev, priority: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowNotificationForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateNotification}
+                disabled={!notificationForm.title || !notificationForm.message}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Send Notification
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
