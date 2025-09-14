@@ -249,6 +249,7 @@ export function Header() {
             <Link href="/" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Home</Link>
             <Link href="/events" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Events</Link>
             <Link href="/gallery" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">Gallery</Link>
+            <Link href="/about" className="text-base font-medium text-blue-700 hover:text-pink-500 transition">About Us</Link>
             
             {isLoggedIn ? (
               <>
