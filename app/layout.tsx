@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: 'eventsphere',
 }
 
+import RootLayoutWrapper from '@/components/RootLayoutWrapper';
+import { AuthProvider } from '@/contexts/AuthContext';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -18,6 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} min-h-screen bg-gradient-to-br from-pink-100 via-white to-blue-100`}>
+        <AuthProvider>
+          <RootLayoutWrapper>
+            {children}
+          </RootLayoutWrapper>
+        </AuthProvider>
         {/* Dynamic Header Navigation - appears on all pages */}
         <Header />
         <div className="pt-20 min-h-screen flex flex-col">
