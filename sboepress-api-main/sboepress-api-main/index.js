@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const path = require("path");
 
+
 // Configure dotenv with the correct path
 dotenv.config({
   path: path.resolve(__dirname, "../../.env"),
@@ -17,6 +18,7 @@ console.log("Environment variables loaded:", {
   MONGODB_URI: process.env.MONGODB_URI,
   NODE_ENV: process.env.NODE_ENV,
 });
+
 
 const rateLimit = require("express-rate-limit");
 const morgan = require("morgan");
@@ -33,6 +35,7 @@ const Media = require("./models/MediaGallery.js");
 // Auth & Admin Routes
 const authRoutes = require("./routes/auth-routes/index.js");
 const adminRoutes = require("./routes/admin-routes/admin.js");
+
 const eventRoutes = require("./routes/events.js"); // Add this line
 const studentRoutes = require('./routes/student-routes/index.js');
 
@@ -60,9 +63,11 @@ const roleCheck = (allowedRoles) => {
   };
 };
 
+
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+
 const MONGODB_URI = process.env.MONGODB_URI;
 
 
@@ -71,6 +76,7 @@ if (!MONGODB_URI) {
 
   process.exit(1);
 }
+
 
 // Middleware
 app.use(
@@ -108,7 +114,8 @@ mongoose
 // Auth and Admin Routes
 app.use("/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/events", eventRoutes); // Add this line
+app.use("/api/events", eventRoutes);
+app.use("/api/gallery", galleryRoutes);
 
 // Auth Routes - Move this BEFORE protected routes
 app.post('/auth/login', async (req, res) => {
