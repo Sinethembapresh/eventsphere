@@ -3,9 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import axiosInstance from "@/app/api/axiosInstance";
 
-import type { GalleryMedia } from "@/lib/models/GalleryMedia";
-
+// GalleryMedia interface definition
+interface GalleryMedia {
+  _id: string;
+  imageUrl: string;
+  title?: string;
+  description?: string;
+  category: string;
+  tags?: string[];
+}
 
 // Fallback image component for Next.js Image
 function ImageWithFallback({ 
@@ -57,13 +65,19 @@ export default function Gallery() {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await fetch('/api/gallery');
-        if (response.ok) {
-          const data = await response.json();
-          setGalleryImages(data.images || []);
-          setCategoryCounts(data.categoryCounts || {});
+        const response = await axiosInstance.get('/api/gallery');
+        if (response.data.success) {
+          const images = response.data.data || [];
+          setGalleryImages(images);
+          
+          // Calculate category counts
+          const counts = images.reduce((acc: Record<string, number>, img: GalleryMedia) => {
+            acc[img.category] = (acc[img.category] || 0) + 1;
+            return acc;
+          }, {});
+          setCategoryCounts(counts);
         } else {
-          console.error('Failed to fetch gallery images:', response.status, response.statusText);
+          console.error('Failed to fetch gallery images:', response.data.message);
         }
       } catch (error) {
         console.error('Failed to fetch gallery images:', error);
@@ -249,6 +263,8 @@ export default function Gallery() {
             >
               <button
                 onClick={() => setSelectedImage(null)}
+                aria-label="Close image preview"
+                title="Close"
                 className="absolute top-4 right-4 p-2 rounded-full bg-white/20 dark:bg-gray-800/20 text-white hover:bg-white/30 dark:hover:bg-gray-700/30 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
