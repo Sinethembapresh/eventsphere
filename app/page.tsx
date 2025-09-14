@@ -51,9 +51,7 @@ export default function HomePage() {
 
         {/* Overlay Content */}
         <div className="max-w-5xl mx-auto text-center relative z-10">
-          <motion.h1
-            className="text-5xl md:text-7xl font-extrabold mb-6 text-white drop-shadow-2xl"
-          >
+          <motion.h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-white drop-shadow-2xl">
             {"Welcome to EventSphere".split(" ").map((word, index) => (
               <motion.span
                 key={index}
@@ -67,23 +65,19 @@ export default function HomePage() {
             ))}
           </motion.h1>
 
-          <motion.p
-            className="text-2xl text-white mb-10 max-w-2xl mx-auto font-medium drop-shadow-lg"
-          >
-
-            {"Your comprehensive college event management system. Discover, participate, and organize amazing events that shape your college experience.".split(
-              " "
-            ).map((word, index) => (
-              <motion.span
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                {word + " "}
-              </motion.span>
-            ))}
-
+          <motion.p className="text-2xl text-white mb-10 max-w-2xl mx-auto font-medium drop-shadow-lg">
+            {"Your comprehensive college event management system. Discover, participate, and organize amazing events that shape your college experience."
+              .split(" ")
+              .map((word, index) => (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  {word + " "}
+                </motion.span>
+              ))}
           </motion.p>
 
           <motion.div
@@ -122,12 +116,13 @@ export default function HomePage() {
               Everything You Need for College Events
             </h2>
 
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Made with ❤️ at ASIT</p>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Made with ❤️ at ASIT
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Feature Cards */}
-
+            {/* Past Events */}
             <Link href="/events/past" className="hover:no-underline">
               <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
@@ -136,47 +131,60 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-
-
-                    Browse and discover past events from all departments and categories.
-
+                    Browse and discover past events from all departments and
+                    categories.
                   </CardDescription>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link href="/events/register" className="hover:no-underline">
+            {/* Upcoming Events */}
+            <Link href="/events/upcoming" className="hover:no-underline">
               <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
                   <Users className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <CardTitle>upcoming Events</CardTitle>
+                  <CardTitle>Upcoming Events</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                  Browse and discover past events from all departments and categories.
-
+                    Stay updated with upcoming college events and never miss out
+                    on exciting opportunities.
                   </CardDescription>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link href="/events/certificates" className="hover:no-underline">
+            {/* FAQs */}
+            <Link href="/faqs" className="hover:no-underline">
               <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
-                  <Trophy className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+                  <BookOpen className="h-12 w-12 text-purple-600 mx-auto mb-4" />
                   <CardTitle>FAQs</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-
-                  Find answers to common questions about events, registration, and participation.
-
+                    Find answers to common questions about events, registration,
+                    and participation.
                   </CardDescription>
                 </CardContent>
               </Card>
             </Link>
 
-       
+            {/* Certificates */}
+            <Link href="/events/certificates" className="hover:no-underline">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <Trophy className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+                  <CardTitle>Certificates</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Download and verify certificates for the events you have
+                    participated in.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
       </section>
@@ -198,13 +206,12 @@ export default function HomePage() {
               Event Categories
             </h2>
             <p className="text-lg text-gray-600">
-
-              Explore events across various categories and find what interests you most.
+              Explore events across various categories and find what interests
+              you most.
             </p>
           </div>
 
           <div className="grid grid-cols-3 grid-rows-2 gap-6">
-            {/* Category Cards */}
             {[
               {
                 name: "Technical",
@@ -279,7 +286,6 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-
       </section>
     </div>
   );
