@@ -1,8 +1,5 @@
 import Gallery from "./gallery";
-import { withAuth } from "@/middleware/withAuth";
 
-function GalleryPage() {
+export default function GalleryPage() {
   return <Gallery />;
 }
-
-export default withAuth(GalleryPage);
