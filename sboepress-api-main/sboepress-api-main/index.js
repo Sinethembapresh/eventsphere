@@ -38,6 +38,7 @@ const adminRoutes = require("./routes/admin-routes/admin.js");
 
 const eventRoutes = require("./routes/events.js"); // Add this line
 const studentRoutes = require('./routes/student-routes/index.js');
+const galleryRoutes = require('./routes/gallery');
 
 // Middleware
 const authMiddleware = require("./middlewares/auth-middleware.js");
