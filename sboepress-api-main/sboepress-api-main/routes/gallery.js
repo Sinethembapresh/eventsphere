@@ -1,71 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const Media = require('../models/MediaGallery.js');
-const { verifyToken, isAdmin } = require('../middleware/auth.js');
+const { verifyToken, isAdmin } = require('../middleware/auth');
+const Gallery = require('../models/Gallery');
 
 // Get all gallery images
 router.get('/', async (req, res) => {
   try {
-    const images = await Media.find().sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: images });
+    const images = await Gallery.find().sort({ createdAt: -1 });
+    res.json({ success: true, data: images });
   } catch (error) {
     console.error('Error fetching gallery images:', error);
-    res.status(500).json({ success: false, message: 'Error fetching gallery images' });
+    res.status(500).json({ success: false, message: 'Error fetching images' });
   }
 });
 
-// Add new image to gallery (admin only)
+// Add new image (admin only)
 router.post('/', verifyToken, isAdmin, async (req, res) => {
   try {
     const { imageUrl, category } = req.body;
-
     if (!imageUrl || !category) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Image URL and category are required' 
-      });
+      return res.status(400).json({ success: false, message: 'Image URL and category are required' });
     }
 
-    const newImage = await Media.create({
+    const newImage = new Gallery({
       imageUrl,
       category,
-      createdAt: new Date()
+      uploadedBy: req.user._id
     });
 
-    res.status(201).json({ 
-      success: true, 
-      message: 'Image added successfully', 
-      data: newImage 
-    });
+    await newImage.save();
+    res.json({ success: true, data: newImage });
   } catch (error) {
-    console.error('Error adding image to gallery:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error adding image to gallery' 
-    });
+    console.error('Error adding image:', error);
+    res.status(500).json({ success: false, message: 'Error adding image' });
   }
 });
 
-// Delete image from gallery (admin only)
+// Delete image (admin only)
 router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
   try {
-    const image = await Media.findByIdAndDelete(req.params.id);
+    const image = await Gallery.findByIdAndDelete(req.params.id);
     if (!image) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Image not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Image not found' });
     }
-    res.status(200).json({ 
-      success: true, 
-      message: 'Image deleted successfully' 
-    });
+    res.json({ success: true, message: 'Image deleted successfully' });
   } catch (error) {
     console.error('Error deleting image:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error deleting image' 
-    });
+    res.status(500).json({ success: false, message: 'Error deleting image' });
   }
 });
 

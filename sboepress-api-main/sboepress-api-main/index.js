@@ -115,6 +115,7 @@ mongoose
 app.use("/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/events", eventRoutes);
+const galleryRoutes = require('./routes/gallery');
 app.use("/api/gallery", galleryRoutes);
 
 // Auth Routes - Move this BEFORE protected routes
