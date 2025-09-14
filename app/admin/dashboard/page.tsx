@@ -6,8 +6,10 @@ import { useToast } from "@/components/ui/use-toast";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UserManagement } from "@/components/admin/user-management";
 import { EventApproval } from "@/components/admin/event-approval";
+
 import { NotificationFix } from "@/components/admin/notification-fix";
 import GalleryManagement from "@/components/admin/gallery-management";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -346,12 +348,16 @@ export default function AdminDashboard() {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
+
             <TabsList className="grid w-full grid-cols-6">
+
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="users">User Management</TabsTrigger>
               <TabsTrigger value="events">Event Approval</TabsTrigger>
               <TabsTrigger value="gallery">Gallery</TabsTrigger>
+
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
+
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
 
@@ -504,6 +510,7 @@ export default function AdminDashboard() {
               <EventApproval />
             </TabsContent>
 
+
             <TabsContent value="gallery" className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -528,6 +535,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <NotificationFix />
+
             </TabsContent>
 
             <TabsContent value="analytics">

@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+
 import type { GalleryMedia } from "@/lib/models/GalleryMedia";
+
 
 // Fallback image component for Next.js Image
 function ImageWithFallback({ 
@@ -65,10 +67,12 @@ export default function Gallery() {
         }
       } catch (error) {
         console.error('Failed to fetch gallery images:', error);
+
       } finally {
         setLoading(false);
       }
     };
+
     fetchImages();
   }, []);
 
@@ -88,7 +92,15 @@ export default function Gallery() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+
+  const noImagesMessage = (
+    <div className="text-center text-gray-500">
+      No images available in this category
+    </div>
+  );
+
   return (
+
     <main className="max-w-7xl mx-auto px-4 py-12 min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
@@ -233,6 +245,7 @@ export default function Gallery() {
               transition={{ duration: 0.3 }}
               className="relative max-w-4xl w-full mx-4 p-4 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md rounded-xl shadow-xl"
               onClick={(e) => e.stopPropagation()}
+
             >
               <button
                 onClick={() => setSelectedImage(null)}

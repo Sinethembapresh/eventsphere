@@ -1,3 +1,4 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 
 // GET /api/gallery - Get gallery images for public display
@@ -54,4 +55,5 @@ async function getGalleryCollection() {
   const { getDatabase } = await import("@/lib/database/collections")
   const db = await getDatabase()
   return db.collection("gallery")
+
 }
