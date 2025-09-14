@@ -138,15 +138,24 @@ router.put("/:id", authMiddleware, async (req, res) => {
       });
     }
 
+    // Check if user is admin or the event organizer
     const isAdmin = userRole === "admin";
     const isOrganizer = userRole === "organizer";
     const isEventCreator = event.organizer.toString() === userId;
-    const canEdit = isAdmin || (isOrganizer && isEventCreator);
 
-    if (!canEdit) {
+    if (!isAdmin && (!isOrganizer || !isEventCreator)) {
+      console.log('Permission denied:', {
+        userRole,
+        isAdmin,
+        isOrganizer,
+        isEventCreator,
+        userId,
+        eventOrganizer: event.organizer.toString()
+      });
+      
       return res.status(403).json({
         success: false,
-        message: "Not authorized to edit this event"
+        message: "You don't have permission to edit this event"
       });
     }
 

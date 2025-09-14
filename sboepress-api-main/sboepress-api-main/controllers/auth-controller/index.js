@@ -48,13 +48,17 @@ const loginUser = async (req, res) => {
     });
   }
 
+  // Include full user object in token payload
+  const tokenPayload = {
+    _id: checkUser._id,
+    userName: checkUser.userName,
+    userEmail: checkUser.userEmail,
+    role: checkUser.role,
+    department: checkUser.department
+  };
+
   const accessToken = jwt.sign(
-    {
-      _id: checkUser._id,
-      userName: checkUser.userName,
-      userEmail: checkUser.userEmail,
-      role: checkUser.role,
-    },
+    tokenPayload,
     process.env.JWT_SECRET,
     { expiresIn: "120m" }
   );

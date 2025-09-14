@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { BookOpen } from "lucide-react"
+import { toast } from "sonner"
 
 export default function EventManagementPage() {
   const [role, setRole] = useState<string>("")
@@ -14,12 +15,20 @@ export default function EventManagementPage() {
     async function fetchRole() {
       setLoading(true)
       try {
-        const response = await fetch("/api/auth/me")
+        const response = await fetch("/api/auth/me", {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
         if (response.ok) {
           const data = await response.json()
           setRole(data.user.role)
+        } else {
+          throw new Error('Failed to fetch user role')
         }
-      } catch {
+      } catch (error) {
+        console.error('Auth error:', error)
+        toast.error('Failed to verify permissions')
         setRole("")
       } finally {
         setLoading(false)
