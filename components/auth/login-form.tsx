@@ -27,36 +27,59 @@ const handleSubmit = async (e: React.FormEvent) => {
   setError("")
 
   try {
-    const response = await axiosInstance.post("/auth/login", {
-      userEmail: formData.userEmail, // 👈 match backend
-      password: formData.password,
+    // Try Express API first (port 3000)
+    const res = await fetch("http://localhost:3000/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userEmail: formData.userEmail,
+        password: formData.password,
+      }),
+      
     })
 
-    const { success, data, message } = response.data
+    const data = await res.json()
 
-    if (success) {
-      // Store token
-      localStorage.setItem("token", data.accessToken)
+    if (res.ok && data.success && data.data?.user) {
+      // Store token in localStorage for axiosInstance
+      if (data.data.accessToken) {
+        localStorage.setItem("token", data.data.accessToken)
+        // Trigger storage event to update header
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'token',
+          newValue: data.data.accessToken,
+          storageArea: localStorage
+        }))
+      }
 
-      // Redirect based on user role
-      switch (data.user.role) {
+      // Clear any pending event join since we're going to dashboard
+      localStorage.removeItem("pendingEventJoin")
+      
+      // Always redirect to appropriate dashboard based on user role
+      const userRole = data.data.user.role
+      let dashboardUrl = "/events" // fallback
+      
+      switch (userRole) {
         case "admin":
-          router.push("/admin/dashboard")
+          dashboardUrl = "/admin/dashboard"
           break
         case "organizer":
-          router.push("/organizer/dashboard")
+          dashboardUrl = "/organizer/dashboard"
           break
         case "participant":
-          router.push("/dashboard")
+          dashboardUrl = "/dashboard"
           break
         default:
-          router.push("/events")
+          dashboardUrl = "/events"
       }
+      
+      // Use replace to prevent back button issues
+      router.replace(dashboardUrl)
     } else {
-      setError(message || "Login failed")
+      setError(data.message || "Login failed")
     }
   } catch (error: any) {
-    setError(error.response?.data?.message || "Network error. Please try again.")
+    setError("Network error. Please try again.")
   } finally {
     setIsLoading(false)
   }

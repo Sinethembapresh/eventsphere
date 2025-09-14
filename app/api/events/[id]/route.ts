@@ -47,7 +47,36 @@ export const PUT = withAuth(async (req: NextRequest, user, { params }: { params:
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    if (event.organizerId !== user.userId && user.role !== "admin") {
+    // Debug logging
+    console.log("Event update request:", {
+      eventId: params.id,
+      user: {
+        userId: user.userId,
+        email: user.email,
+        role: user.role,
+        name: user.name
+      },
+      event: {
+        organizerId: event.organizerId,
+        organizerEmail: event.organizerEmail
+      }
+    })
+
+    // Allow access if user is admin, owns the event, or event has no organizer (null)
+    const hasPermission = user.role === "admin" || 
+                         event.organizerId === user.userId || 
+                         event.organizerId === null ||
+                         event.organizerEmail === user.email
+
+    console.log("Permission check:", {
+      isAdmin: user.role === "admin",
+      isOwner: event.organizerId === user.userId,
+      hasNullOrganizer: event.organizerId === null,
+      emailMatch: event.organizerEmail === user.email,
+      hasPermission
+    })
+
+    if (!hasPermission) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
@@ -59,13 +88,22 @@ export const PUT = withAuth(async (req: NextRequest, user, { params }: { params:
       }
     }
 
+    // If event has no organizer and user is updating it, set them as organizer
+    const updateFields: any = {
+      ...updateData,
+      updatedAt: new Date(),
+    }
+
+    if (event.organizerId === null) {
+      updateFields.organizerId = user.userId
+      updateFields.organizerName = user.name || "Unknown Organizer"
+      updateFields.organizerEmail = user.email
+    }
+
     const result = await events.updateOne(
       { _id: new ObjectId(params.id) },
       {
-        $set: {
-          ...updateData,
-          updatedAt: new Date(),
-        },
+        $set: updateFields,
       },
     )
 
@@ -92,7 +130,13 @@ export const DELETE = withAuth(async (req: NextRequest, user, { params }: { para
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    if (event.organizerId !== user.userId && user.role !== "admin") {
+    // Allow access if user is admin, owns the event, or event has no organizer (null)
+    const hasPermission = user.role === "admin" || 
+                         event.organizerId === user.userId || 
+                         event.organizerId === null ||
+                         event.organizerEmail === user.email
+
+    if (!hasPermission) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 

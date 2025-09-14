@@ -13,18 +13,18 @@ export async function POST(req: NextRequest) {
     }
 
     const users = await getUsersCollection()
-    const user = (await users.findOne({ email: email.toLowerCase() })) as User
+    const user = (await users.findOne({ userEmail: email.toLowerCase() })) as User
 
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    if (!user.isActive) {
+    if (user.isActive === false) {
       return NextResponse.json({ error: "Account is deactivated" }, { status: 401 })
     }
 
     // Check if organizer is approved
-    if (user.role === "organizer" && !user.isApproved) {
+    if (user.role === "organizer" && user.isApproved === false) {
       return NextResponse.json({ error: "Account pending approval from administrator" }, { status: 401 })
     }
 
@@ -50,12 +50,13 @@ export async function POST(req: NextRequest) {
       message: "Login successful",
       user: {
         id: user._id,
-        name: user.name,
-        email: user.email,
+        name: user.userName,
+        email: user.userEmail,
         role: user.role,
         department: user.department,
         enrollmentNumber: user.enrollmentNumber,
       },
+      token: token,
     })
 
     // Set HTTP-only cookie

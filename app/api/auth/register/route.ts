@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Role-specific validation
-    if (role === "student" && (!department || !enrollmentNumber)) {
+    if (role === "participant" && (!department || !enrollmentNumber)) {
       return NextResponse.json(
         { error: "Department and enrollment number are required for participants" },
         { status: 400 },
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       isActive: true,
     }
 
-    const result = await users.insertOne(newUser)
+    const result = await users.insertOne(newUser as any)
     newUser._id = result.insertedId.toString()
 
     // Auto-login for approved users
@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
       const token = generateToken(newUser)
 
       const response = NextResponse.json({
+        success: true,
         message: "Registration successful",
         user: {
           id: newUser._id,
@@ -101,12 +102,13 @@ export async function POST(req: NextRequest) {
       return response
     } else {
       return NextResponse.json({
+        success: true,
         message: "Registration successful. Your account is pending approval from an administrator.",
         requiresApproval: true,
       })
     }
   } catch (error) {
     console.error("Registration error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }

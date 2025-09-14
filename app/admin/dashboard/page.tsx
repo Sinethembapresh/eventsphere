@@ -1,20 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axiosInstance from "@/app/api/axiosInstance"; // adjust path if needed
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UserManagement } from "@/components/admin/user-management";
 import { EventApproval } from "@/components/admin/event-approval";
-import { GalleryApproval } from "@/components/admin/gallery-appr";
+
+import { NotificationFix } from "@/components/admin/notification-fix";
+import GalleryManagement from "@/components/admin/gallery-management";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Users,
   Calendar,
   TrendingUp,
   Star,
+  Image as ImageIcon,
+  MessageSquare,
   AlertTriangle,
   Settings,
+  LogOut,
+  Bell,
 } from "lucide-react";
 
 interface AdminAnalytics {
@@ -42,6 +52,9 @@ interface AdminAnalytics {
     averageRating: number;
     thisMonth: number;
   };
+  media?: {
+    total: number;
+  };
   distributions: {
     categories: Array<{ _id: string; count: number }>;
     departments: Array<{ _id: string; count: number }>;
@@ -52,6 +65,8 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchAnalytics();
@@ -60,19 +75,90 @@ export default function AdminDashboard() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/admin/analytics");
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const response = await fetch("/api/admin/analytics", {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        cache: "no-store",
+      });
 
-      if (response.data.success) {
-        setAnalytics(response.data.data);
+      const data = await response.json();
+
+      if (data.success) {
+        setAnalytics(data.data);
         setError("");
       } else {
-        setError(response.data.message || "Failed to fetch analytics");
+        setError(data.message || "Failed to fetch analytics");
       }
     } catch (err: any) {
       console.error("❌ Fetch error:", err);
       setError("No analytics data available yet.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Try Express API logout first
+      try {
+        const expressResponse = await fetch("http://localhost:3000/auth/logout", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (expressResponse.ok) {
+          console.log("Logged out via Express API");
+        }
+      } catch (expressError) {
+        console.log("Express API not available, trying Next.js API");
+        
+        // Fallback to Next.js API
+        try {
+          const nextResponse = await fetch("/api/auth/logout", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          });
+          
+          if (nextResponse.ok) {
+            console.log("Logged out via Next.js API");
+          }
+        } catch (nextError) {
+          console.error("Next.js API logout failed:", nextError);
+        }
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Always clear local storage and state regardless of API response
+      localStorage.removeItem("token");
+      
+      // Trigger storage event to update other tabs
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'token',
+        newValue: null,
+        storageArea: localStorage
+      }));
+      
+      // Show success message
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      
+      // Redirect to home page
+      router.push("/");
     }
   };
 
@@ -122,10 +208,18 @@ export default function AdminDashboard() {
                 System overview and management
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="h-8 w-8 bg-red-600 rounded-full flex items-center justify-center">
                 <Settings className="h-4 w-4 text-white" />
               </div>
+              <Button 
+                onClick={handleLogout}
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
           </div>
         </div>
@@ -167,26 +261,26 @@ export default function AdminDashboard() {
             />
 
             <StatsCard
-              title="Active Events"
-              value={safeAnalytics.events.approved}
-              description={`${safeAnalytics.events.pending} pending approval`}
+              title="Events"
+              value={safeAnalytics.events.total}
+              description={`${safeAnalytics.events.approved} approved`}
               icon={Calendar}
               className="bg-green-50 border-green-200"
             />
 
             <StatsCard
-              title="Total Registrations"
-              value={safeAnalytics.registrations.total}
-              description={`${safeAnalytics.registrations.thisMonth} this month`}
-              icon={TrendingUp}
+              title="Media"
+              value={safeAnalytics.media?.total || 0}
+              description={`total media assets`}
+              icon={ImageIcon}
               className="bg-orange-50 border-orange-200"
             />
 
             <StatsCard
-              title="Average Rating"
-              value={safeAnalytics.feedback.averageRating.toFixed(1)}
-              description={`${safeAnalytics.feedback.total} total reviews`}
-              icon={Star}
+              title="Feedback"
+              value={safeAnalytics.feedback.total}
+              description={`total reviews`}
+              icon={MessageSquare}
               className="bg-purple-50 border-purple-200"
             />
           </div>
@@ -220,18 +314,31 @@ export default function AdminDashboard() {
               {safeAnalytics.events.pending > 0 && (
                 <Card className="border-orange-200 bg-orange-50">
                   <CardContent className="p-6">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-orange-600" />
-                      <div>
-                        <h3 className="font-medium text-orange-800">
-                          {safeAnalytics.events.pending} Event
-                          {safeAnalytics.events.pending > 1 ? "s" : ""} Pending
-                          Review
-                        </h3>
-                        <p className="text-sm text-orange-700">
-                          Review and approve submitted events
-                        </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-orange-600" />
+                        <div>
+                          <h3 className="font-medium text-orange-800">
+                            {safeAnalytics.events.pending} Event
+                            {safeAnalytics.events.pending > 1 ? "s" : ""} Pending
+                            Review
+                          </h3>
+                          <p className="text-sm text-orange-700">
+                            Review and approve submitted events
+                          </p>
+                        </div>
                       </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-orange-300 text-orange-800 hover:bg-orange-100"
+                        onClick={() => {
+                          const eventsTab = document.querySelector('[value="events"]') as HTMLElement
+                          eventsTab?.click()
+                        }}
+                      >
+                        Review Events
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -241,15 +348,47 @@ export default function AdminDashboard() {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+
+            <TabsList className="grid w-full grid-cols-6">
+
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="users">User Management</TabsTrigger>
               <TabsTrigger value="events">Event Approval</TabsTrigger>
               <TabsTrigger value="gallery">Gallery</TabsTrigger>
+
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
+
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
+              {/* Pending Events Quick View */}
+              {safeAnalytics.events.pending > 0 && (
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-orange-800 flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Pending Events ({safeAnalytics.events.pending})
+                    </CardTitle>
+                    <p className="text-sm text-orange-700">
+                      Events awaiting your approval. Click "Review Events" tab to manage them.
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      variant="outline" 
+                      className="border-orange-300 text-orange-800 hover:bg-orange-100"
+                      onClick={() => {
+                        const eventsTab = document.querySelector('[value="events"]') as HTMLElement
+                        eventsTab?.click()
+                      }}
+                    >
+                      Review All Pending Events
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Category Distribution */}
                 <Card>
@@ -353,12 +492,50 @@ export default function AdminDashboard() {
               <UserManagement />
             </TabsContent>
 
-            <TabsContent value="events">
+            <TabsContent value="events" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Event Management</h2>
+                  <p className="text-gray-600 mt-1">Review, approve, and manage all events</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-orange-600 border-orange-300">
+                    {safeAnalytics.events.pending} Pending
+                  </Badge>
+                  <Badge variant="outline" className="text-green-600 border-green-300">
+                    {safeAnalytics.events.approved} Approved
+                  </Badge>
+                </div>
+              </div>
               <EventApproval />
             </TabsContent>
 
-            <TabsContent value="gallery">
-              <GalleryApproval />
+
+            <TabsContent value="gallery" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <ImageIcon className="h-6 w-6" />
+                    Gallery Management
+                  </h2>
+                  <p className="text-gray-600 mt-1">Upload and manage gallery images by category</p>
+                </div>
+              </div>
+              <GalleryManagement />
+            </TabsContent>
+
+            <TabsContent value="notifications" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <Bell className="h-6 w-6" />
+                    Notification Management
+                  </h2>
+                  <p className="text-gray-600 mt-1">Fix notification distribution and manage system notifications</p>
+                </div>
+              </div>
+              <NotificationFix />
+
             </TabsContent>
 
             <TabsContent value="analytics">

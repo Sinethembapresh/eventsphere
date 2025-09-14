@@ -1,87 +1,55 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { withAuth } from "@/lib/auth/middleware"
-import { getEventsCollection, getRegistrationsCollection } from "@/lib/database/collections"
+import { getEventsCollection, getRegistrationsCollection, getUsersCollection } from "@/lib/database/collections"
+import { withRole } from "@/lib/auth/middleware"
 import { ObjectId } from "mongodb"
 
-export const GET = withAuth(async (req: NextRequest, user) => {
-  try {
-    const { searchParams } = new URL(req.url)
-    const type = searchParams.get("type") || "all" // all, upcoming, past, registered
-    const limit = Number.parseInt(searchParams.get("limit") || "10")
+// GET /api/dashboard/events - Get participant's upcoming events
+export const GET = withRole(["participant"])(
+  async (req: NextRequest, user) => {
+    try {
+      const events = await getEventsCollection()
+      const registrations = await getRegistrationsCollection()
+      const users = await getUsersCollection()
 
-    const events = await getEventsCollection()
-    const registrations = await getRegistrationsCollection()
+      // Resolve user ID
+      const tokenUserId = (user as any).userId || (user as any).id || (user as any)._id
+      let dbUser = null as any
+      if (tokenUserId && ObjectId.isValid(tokenUserId)) {
+        dbUser = await users.findOne({ _id: new ObjectId(tokenUserId) })
+      }
+      if (!dbUser && (user as any).email) {
+        dbUser = await users.findOne({ email: (user as any).email })
+      }
+      const resolvedUserId: string = dbUser?._id?.toString() || tokenUserId || ""
 
-    let userEvents = []
-
-    if (user.role === "participant") {
-      // Get events user is registered for
-      const userRegistrations = await registrations
-        .find({
-          userId: user.userId,
-          status: { $in: ["registered", "attended"] },
-        })
-        .toArray()
-
-      const eventIds = userRegistrations.map((reg) => new ObjectId(reg.eventId))
-
-      const filter: any = {
-        _id: { $in: eventIds },
-        isActive: true,
+      if (!resolvedUserId) {
+        return NextResponse.json({ error: "Unable to resolve user identity" }, { status: 401 })
       }
 
-      if (type === "upcoming") {
-        filter.date = { $gte: new Date() }
-        filter.status = "approved"
-      } else if (type === "past") {
-        filter.date = { $lt: new Date() }
+      // Get user's registered events
+      const userRegistrations = await registrations.find({
+        userId: resolvedUserId,
+        status: "registered"
+      }).toArray()
+
+      const eventIds = userRegistrations.map(reg => reg.eventId)
+      
+      if (eventIds.length === 0) {
+        return NextResponse.json({ events: [] })
       }
 
-      userEvents = await events
-        .find(filter)
-        .sort({ date: type === "past" ? -1 : 1 })
-        .limit(limit)
-        .toArray()
+      // Get upcoming events
+      const upcomingEvents = await events.find({
+        _id: { $in: eventIds.map(id => new ObjectId(id)) },
+        date: { $gte: new Date() },
+        status: "approved",
+        isActive: true
+      }).sort({ date: 1 }).limit(10).toArray()
 
-      // Add registration info
-      userEvents = userEvents.map((event) => {
-        const registration = userRegistrations.find((reg) => reg.eventId === event._id?.toString())
-        return {
-          ...event,
-          registrationStatus: registration?.status,
-          registrationDate: registration?.registrationDate,
-        }
-      })
-    } else if (user.role === "organizer") {
-      // Get events created by organizer
-      const filter: any = {
-        organizerId: user.userId,
-        isActive: true,
-      }
-
-      if (type === "upcoming") {
-        filter.date = { $gte: new Date() }
-      } else if (type === "past") {
-        filter.date = { $lt: new Date() }
-      } else if (type === "pending") {
-        filter.status = "pending"
-      }
-
-      userEvents = await events.find(filter).sort({ createdAt: -1 }).limit(limit).toArray()
-
-      // Add registration counts
-      for (const event of userEvents) {
-        const registrationCount = await registrations.countDocuments({
-          eventId: event._id?.toString(),
-          status: "registered",
-        })
-        event.currentParticipants = registrationCount
-      }
+      return NextResponse.json({ events: upcomingEvents })
+    } catch (error) {
+      console.error("Dashboard events error:", error)
+      return NextResponse.json({ error: "Failed to fetch dashboard events" }, { status: 500 })
     }
-
-    return NextResponse.json({ events: userEvents })
-  } catch (error) {
-    console.error("Dashboard events error:", error)
-    return NextResponse.json({ error: "Failed to fetch dashboard events" }, { status: 500 })
   }
-})
+)

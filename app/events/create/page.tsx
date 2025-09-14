@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
+import { Upload, X, Image as ImageIcon, Link as LinkIcon } from "lucide-react"
 
 export default function CreateEventPage() {
   const router = useRouter()
@@ -30,11 +32,79 @@ export default function CreateEventPage() {
     requirements: "",
     prizes: "",
     contactEmail: "",
+    imageUrl: "",
   })
+
+  // Update registration deadline when event date changes
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    setForm((prev) => {
+      const newForm = { ...prev, date: value }
+      // Always set registration deadline to 1 day before the event
+      if (value) {
+        const eventDate = new Date(value)
+        const deadline = new Date(eventDate.getTime() - 24 * 60 * 60 * 1000)
+        newForm.registrationDeadline = deadline.toISOString().split('T')[0]
+      }
+      return newForm
+    })
+  }
+
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadMethod, setUploadMethod] = useState<'url' | 'file'>('url')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value
+    setForm((prev) => ({ ...prev, imageUrl: url }))
+    if (url) {
+      setImagePreview(url)
+    } else {
+      setImagePreview(null)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file (JPEG, PNG, GIF, etc.)",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive"
+        })
+        return
+      }
+
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    setForm((prev) => ({ ...prev, imageUrl: "" }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,8 +117,24 @@ export default function CreateEventPage() {
       return
     }
 
+    // Image validation - make it optional for now
+    // if (!form.imageUrl && !imageFile) {
+    //   toast({ title: "Image required", description: "Please provide an event image." })
+    //   return
+    // }
+
     setSubmitting(true)
     try {
+      // Handle image - convert file to data URL if uploaded
+      let imageUrl = form.imageUrl
+      if (imageFile) {
+        const reader = new FileReader()
+        imageUrl = await new Promise<string>((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.readAsDataURL(imageFile)
+        })
+      }
+
       const payload = {
         title: form.title,
         description: form.description,
@@ -59,7 +145,11 @@ export default function CreateEventPage() {
         time: form.time,
         endTime: form.endTime || undefined,
         maxParticipants: form.maxParticipants || undefined,
-        registrationDeadline: form.registrationDeadline || form.date,
+        registrationDeadline: form.registrationDeadline || (() => {
+          const eventDate = new Date(form.date)
+          const deadline = new Date(eventDate.getTime() - 24 * 60 * 60 * 1000) // 1 day before
+          return deadline.toISOString().split('T')[0]
+        })(),
         tags: form.tags
           ? form.tags
               .split(",")
@@ -79,7 +169,15 @@ export default function CreateEventPage() {
               .filter(Boolean)
           : [],
         contactInfo: form.contactEmail ? { email: form.contactEmail } : undefined,
+        media: {
+          images: imageUrl ? [imageUrl] : [],
+          videos: [],
+          documents: []
+        }
       }
+
+      console.log("Sending event creation payload:", payload)
+
 
       // Attach JWT if available (works with both header- and cookie-based auth)
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -95,6 +193,11 @@ export default function CreateEventPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        console.error("Event creation failed:", {
+          status: res.status,
+          statusText: res.statusText,
+          data: data
+        })
         throw new Error(data?.error || "Failed to create event")
       }
 
@@ -128,6 +231,106 @@ export default function CreateEventPage() {
                   <Textarea id="description" name="description" value={form.description} onChange={handleChange} required />
                 </div>
 
+                {/* Event Image */}
+                <div className="md:col-span-2 space-y-4">
+                  <Label>Event Image *</Label>
+                  
+                  {/* Upload Method Selection */}
+                  <div className="flex gap-4">
+                    <Button
+                      type="button"
+                      variant={uploadMethod === 'url' ? 'default' : 'outline'}
+                      onClick={() => setUploadMethod('url')}
+                      className="flex items-center gap-2"
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                      Image URL
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={uploadMethod === 'file' ? 'default' : 'outline'}
+                      onClick={() => setUploadMethod('file')}
+                      className="flex items-center gap-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      Upload File
+                    </Button>
+                  </div>
+
+                  {/* Image URL Input */}
+                  {uploadMethod === 'url' && (
+                    <div className="space-y-2">
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/event-image.jpg"
+                        value={form.imageUrl}
+                        onChange={handleImageUrlChange}
+                        required
+                      />
+                      <p className="text-sm text-gray-500">
+                        Enter a direct URL to an image (JPEG, PNG, GIF, WebP)
+                      </p>
+                    </div>
+                  )}
+
+                  {/* File Upload */}
+                  {uploadMethod === 'file' && (
+                    <div className="space-y-2">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <label htmlFor="image-upload" className="cursor-pointer">
+                          {imageFile ? (
+                            <div className="space-y-2">
+                              <ImageIcon className="h-8 w-8 text-green-500 mx-auto" />
+                              <p className="text-sm font-medium">{imageFile.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {(imageFile.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <Upload className="h-8 w-8 text-gray-400 mx-auto" />
+                              <p className="text-sm font-medium">Click to upload image</p>
+                              <p className="text-xs text-gray-500">
+                                JPEG, PNG, GIF, WebP (max 5MB)
+                              </p>
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="space-y-2">
+                      <Label>Preview</Label>
+                      <div className="relative inline-block">
+                        <img
+                          src={imagePreview}
+                          alt="Event preview"
+                          className="w-48 h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                          onClick={removeImage}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
                   <Input id="category" name="category" value={form.category} onChange={handleChange} placeholder="e.g., Technical, Cultural" required />
@@ -145,7 +348,7 @@ export default function CreateEventPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="date">Date</Label>
-                  <Input id="date" type="date" name="date" value={form.date} onChange={handleChange} required />
+                  <Input id="date" type="date" name="date" value={form.date} onChange={handleDateChange} required />
                 </div>
 
                 <div className="space-y-2">

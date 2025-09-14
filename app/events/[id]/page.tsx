@@ -13,6 +13,7 @@ export default function EventDetailsPage() {
   const [event, setEvent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -39,6 +40,7 @@ export default function EventDetailsPage() {
       </div>
     )
   }
+
 
   if (error || !event) {
     return (
