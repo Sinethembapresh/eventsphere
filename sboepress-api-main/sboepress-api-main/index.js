@@ -4,7 +4,8 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-dotenv.config();
+const path = require("path");
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const rateLimit = require("express-rate-limit");
 const morgan = require("morgan");
@@ -21,12 +22,13 @@ const Media = require("./models/MediaGallery.js");
 // Auth & Admin Routes
 const authRoutes = require("./routes/auth-routes/index.js");
 const adminRoutes = require("./routes/admin-routes/admin.js");
-const eventRoutes = require("./routes/events.js"); // Add this line
+const eventRoutes = require("./routes/events.js");
+const galleryRoutes = require("./routes/gallery.js");
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.MONGODB_URI;
 
 // Middleware
 app.use(
@@ -62,7 +64,8 @@ mongoose
 // Auth and Admin Routes
 app.use("/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/events", eventRoutes); // Add this line
+app.use("/api/events", eventRoutes);
+app.use("/api/gallery", galleryRoutes);
 
 // Example: get user by ID
 app.get("/api/user/:id", async (req, res) => {

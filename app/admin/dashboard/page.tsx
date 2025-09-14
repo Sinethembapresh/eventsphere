@@ -5,6 +5,7 @@ import axiosInstance from "@/app/api/axiosInstance"; // adjust path if needed
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UserManagement } from "@/components/admin/user-management";
 import { EventApproval } from "@/components/admin/event-approval";
+import { GalleryApproval } from "@/components/admin/gallery-appr";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -240,10 +241,11 @@ export default function AdminDashboard() {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="users">User Management</TabsTrigger>
               <TabsTrigger value="events">Event Approval</TabsTrigger>
+              <TabsTrigger value="gallery">Gallery</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
 
@@ -353,6 +355,10 @@ export default function AdminDashboard() {
 
             <TabsContent value="events">
               <EventApproval />
+            </TabsContent>
+
+            <TabsContent value="gallery">
+              <GalleryApproval />
             </TabsContent>
 
             <TabsContent value="analytics">
