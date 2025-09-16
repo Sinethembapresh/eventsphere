@@ -1,35 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { 
+  Card, CardContent, CardHeader, CardTitle, CardDescription 
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
-  Calendar, 
-  Users, 
-  Award, 
-  Clock, 
-  Bell, 
-  Settings, 
-  Search,
-  Filter,
-  Download,
-  Share2,
-  Bookmark,
-  Star,
-  Camera,
-  QrCode,
-  TrendingUp,
-  Activity,
-  LogOut,
-  MessageSquare
+  Calendar, Users, Award, Clock, Bell, Settings, Camera, Activity, LogOut, MessageSquare 
 } from "lucide-react"
 import Link from "next/link"
 import { EventCard } from "@/components/events/event-card"
 import { ParticipantCertificates } from "@/components/certificates/participant-certificates"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface DashboardStats {
   totalRegistrations: number
@@ -56,11 +44,16 @@ export default function ParticipantDashboard() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
   const [notifications, setNotifications] = useState<any[]>([])
+  const [bookmarkedEvents, setBookmarkedEvents] = useState<any[]>([])
   const { toast } = useToast()
   const router = useRouter()
 
+  // feedback state
+  const [feedbackRating, setFeedbackRating] = useState<number>(0)
+  const [feedbackComment, setFeedbackComment] = useState("")
+  const [selectedEvent, setSelectedEvent] = useState<string>("")
+
   useEffect(() => {
-    // Fetch dashboard data
     fetchDashboardData()
     fetchUpcomingEvents()
     fetchNotifications()
@@ -75,7 +68,6 @@ export default function ParticipantDashboard() {
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include"
       })
-      
       if (response.ok) {
         const data = await response.json()
         setStats(data)
@@ -94,7 +86,6 @@ export default function ParticipantDashboard() {
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include"
       })
-      
       if (response.ok) {
         const data = await response.json()
         setUpcomingEvents(data.events || [])
@@ -113,7 +104,6 @@ export default function ParticipantDashboard() {
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include"
       })
-      
       if (response.ok) {
         const data = await response.json()
         setNotifications(data.notifications || [])
@@ -123,18 +113,10 @@ export default function ParticipantDashboard() {
     }
   }
 
-  const handleQuickAction = (action: string) => {
-    toast({
-      title: "Quick Action",
-      description: `${action} feature coming soon!`,
-    })
-  }
-
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token")
-      
-      // Try Express API logout first
+
       try {
         const expressResponse = await fetch("http://localhost:3000/auth/logout", {
           method: "POST",
@@ -143,14 +125,8 @@ export default function ParticipantDashboard() {
             "Content-Type": "application/json",
           },
         })
-        
-        if (expressResponse.ok) {
-          console.log("Logged out via Express API")
-        }
-      } catch (expressError) {
-        console.log("Express API not available, trying Next.js API")
-        
-        // Fallback to Next.js API
+        if (expressResponse.ok) console.log("Logged out via Express API")
+      } catch {
         try {
           const nextResponse = await fetch("/api/auth/logout", {
             method: "POST",
@@ -160,35 +136,85 @@ export default function ParticipantDashboard() {
             },
             credentials: "include",
           })
-          
-          if (nextResponse.ok) {
-            console.log("Logged out via Next.js API")
-          }
+          if (nextResponse.ok) console.log("Logged out via Next.js API")
         } catch (nextError) {
           console.error("Next.js API logout failed:", nextError)
         }
       }
-    } catch (error) {
-      console.error("Logout error:", error)
     } finally {
-      // Always clear local storage and state regardless of API response
       localStorage.removeItem("token")
-      
-      // Trigger storage event to update other tabs
       window.dispatchEvent(new StorageEvent('storage', {
         key: 'token',
         newValue: null,
         storageArea: localStorage
       }))
-      
-      // Show success message
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",
       })
-      
-      // Redirect to home page
       router.push("/")
+    }
+  }
+
+  const registerForEvent = async (eventId: string) => {
+    const token = localStorage.getItem("token")
+    const res = await fetch(`/api/events/${eventId}/register`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) {
+      toast({ title: "Registered", description: "You are registered for this event!" })
+      fetchUpcomingEvents()
+    }
+  }
+
+  const cancelRegistration = async (eventId: string) => {
+    const token = localStorage.getItem("token")
+    const res = await fetch(`/api/events/${eventId}/cancel`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) {
+      toast({ title: "Cancelled", description: "Your registration has been cancelled." })
+      fetchUpcomingEvents()
+    }
+  }
+
+  const toggleBookmark = (event: any) => {
+    setBookmarkedEvents((prev) => {
+      if (prev.find((e) => e._id === event._id)) {
+        toast({ title: "Removed", description: "Event removed from bookmarks" })
+        return prev.filter((e) => e._id !== event._id)
+      } else {
+        toast({ title: "Bookmarked", description: "Event saved to bookmarks" })
+        return [...prev, event]
+      }
+    })
+  }
+
+  const handleSubmitFeedback = async () => {
+    if (!selectedEvent || feedbackRating === 0) {
+      toast({ title: "Missing Info", description: "Please select event and rating" })
+      return
+    }
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/events/${selectedEvent}/feedback`, {
+        method: "POST",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ rating: feedbackRating, comment: feedbackComment })
+      })
+      if (res.ok) {
+        toast({ title: "Feedback Sent", description: "Thank you for your feedback!" })
+        setFeedbackRating(0)
+        setFeedbackComment("")
+        setSelectedEvent("")
+      }
+    } catch (err) {
+      console.error("Feedback failed:", err)
     }
   }
 
@@ -196,75 +222,62 @@ export default function ParticipantDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Participant Dashboard</h1>
-              <p className="text-gray-600">Welcome back! Here's your event participation overview.</p>
-            </div>
-            <Button 
-              onClick={handleLogout}
-              variant="outline"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Participant Dashboard</h1>
+            <p className="text-gray-600">Welcome back! Here's your event participation overview.</p>
           </div>
+          <Button 
+            onClick={handleLogout}
+            variant="outline"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
 
-        {/* Stats Overview */}
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm">Total Registrations</p>
-                  <p className="text-2xl font-bold">{stats.totalRegistrations}</p>
-                </div>
-                <Calendar className="h-8 w-8 text-blue-200" />
+            <CardContent className="p-6 flex justify-between">
+              <div>
+                <p className="text-blue-100 text-sm">Total Registrations</p>
+                <p className="text-2xl font-bold">{stats.totalRegistrations}</p>
               </div>
+              <Calendar className="h-8 w-8 text-blue-200" />
             </CardContent>
           </Card>
-
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm">Upcoming Events</p>
-                  <p className="text-2xl font-bold">{stats.upcomingEvents}</p>
-                </div>
-                <Clock className="h-8 w-8 text-green-200" />
+            <CardContent className="p-6 flex justify-between">
+              <div>
+                <p className="text-green-100 text-sm">Upcoming Events</p>
+                <p className="text-2xl font-bold">{stats.upcomingEvents}</p>
               </div>
+              <Clock className="h-8 w-8 text-green-200" />
             </CardContent>
           </Card>
-
           <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm">Certificates</p>
-                  <p className="text-2xl font-bold">{stats.certificatesEarned}</p>
-                </div>
-                <Award className="h-8 w-8 text-purple-200" />
+            <CardContent className="p-6 flex justify-between">
+              <div>
+                <p className="text-purple-100 text-sm">Certificates</p>
+                <p className="text-2xl font-bold">{stats.certificatesEarned}</p>
               </div>
+              <Award className="h-8 w-8 text-purple-200" />
             </CardContent>
           </Card>
-
           <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-sm">Events Attended</p>
-                  <p className="text-2xl font-bold">{stats.eventsAttended}</p>
-                </div>
-                <Users className="h-8 w-8 text-orange-200" />
+            <CardContent className="p-6 flex justify-between">
+              <div>
+                <p className="text-orange-100 text-sm">Events Attended</p>
+                <p className="text-2xl font-bold">{stats.eventsAttended}</p>
               </div>
+              <Users className="h-8 w-8 text-orange-200" />
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Content Tabs */}
+        {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -273,18 +286,16 @@ export default function ParticipantDashboard() {
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
             <TabsTrigger value="certificates">Certificates</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
+          {/* Overview */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Upcoming Events */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Upcoming Events
+                    <Calendar className="h-5 w-5" /> Upcoming Events
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -303,18 +314,13 @@ export default function ParticipantDashboard() {
                         <Link href="/events">View All Events</Link>
                       </Button>
                     </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No upcoming events</p>
-                  )}
+                  ) : <p className="text-gray-500 text-center py-4">No upcoming events</p>}
                 </CardContent>
               </Card>
-
-              {/* Recent Activity */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Recent Activity
+                    <Activity className="h-5 w-5" /> Recent Activity
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -331,195 +337,127 @@ export default function ParticipantDashboard() {
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No recent activity</p>
-                  )}
+                  ) : <p className="text-gray-500 text-center py-4">No recent activity</p>}
                 </CardContent>
               </Card>
             </div>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common tasks and shortcuts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button variant="outline" className="h-20 flex-col gap-2" onClick={() => handleQuickAction("QR Check-in")}>
-                    <QrCode className="h-6 w-6" />
-                    <span className="text-sm">QR Check-in</span>
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2" onClick={() => handleQuickAction("Search Events")}>
-                    <Search className="h-6 w-6" />
-                    <span className="text-sm">Search Events</span>
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2" asChild>
-                    <Link href="/feedback">
-                      <MessageSquare className="h-6 w-6" />
-                      <span className="text-sm">Give Feedback</span>
-                    </Link>
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2" onClick={() => handleQuickAction("Download Certificates")}>
-                    <Download className="h-6 w-6" />
-                    <span className="text-sm">Certificates</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
-          {/* Events Tab */}
+          {/* Events */}
           <TabsContent value="events" className="space-y-6">
-            <div className="flex gap-4 mb-6">
-              <Button variant="outline" className="flex items-center gap-2">
-                <Search className="h-4 w-4" />
-                Search Events
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                Filter
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Bookmark className="h-4 w-4" />
-                Saved Events
-              </Button>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {upcomingEvents.map((event) => (
-                <EventCard key={event._id} event={event} userRole="participant" />
+                <EventCard 
+                  key={event._id} 
+                  event={event} 
+                  userRole="participant"
+                  onRegister={() => registerForEvent(event._id)}
+                  onCancel={() => cancelRegistration(event._id)}
+                  onBookmark={() => toggleBookmark(event)}
+                />
               ))}
             </div>
           </TabsContent>
 
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6">
+          {/* Notifications */}
+          <TabsContent value="notifications">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Notifications
-                </CardTitle>
+                <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> Notifications</CardTitle>
               </CardHeader>
               <CardContent>
                 {notifications.length > 0 ? (
                   <div className="space-y-4">
-                    {notifications.map((notification) => (
-                      <div key={notification.id} className="flex items-start gap-3 p-4 border rounded-lg">
+                    {notifications.map((n) => (
+                      <div key={n.id} className="flex items-start gap-3 p-4 border rounded-lg">
                         <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                         <div className="flex-1">
-                          <h4 className="font-medium">{notification.title}</h4>
-                          <p className="text-sm text-gray-600">{notification.message}</p>
-                          <p className="text-xs text-gray-500 mt-1">{new Date(notification.createdAt).toLocaleString()}</p>
+                          <h4 className="font-medium">{n.title}</h4>
+                          <p className="text-sm text-gray-600">{n.message}</p>
+                          <p className="text-xs text-gray-500 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
                         </div>
-                        {!notification.read && <Badge variant="destructive" className="text-xs">New</Badge>}
+                        {!n.read && <Badge variant="destructive" className="text-xs">New</Badge>}
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-8">No notifications</p>
-                )}
+                ) : <p className="text-gray-500 text-center py-8">No notifications</p>}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Feedback Tab */}
-          <TabsContent value="feedback" className="space-y-6">
+          {/* Feedback */}
+          <TabsContent value="feedback">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Event Feedback
-                </CardTitle>
-                <CardDescription>Share your experience and help us improve future events</CardDescription>
+                <CardTitle className="flex items-center gap-2"><MessageSquare className="h-5 w-5" /> Event Feedback</CardTitle>
+                <CardDescription>Send feedback for an event you attended</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <MessageSquare className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Share Your Feedback</h3>
-                  <p className="text-gray-500 mb-4">Help us improve by sharing your experience with events you've attended</p>
-                  <Button asChild>
-                    <Link href="/feedback">
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Go to Feedback
-                    </Link>
-                  </Button>
-                </div>
+              <CardContent className="space-y-4">
+                <Label>Select Event</Label>
+                <Select onValueChange={setSelectedEvent} value={selectedEvent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an event" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {upcomingEvents.map((event) => (
+                      <SelectItem key={event._id} value={event._id}>{event.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Label>Rating</Label>
+                <Select onValueChange={(val) => setFeedbackRating(Number(val))} value={feedbackRating.toString()}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Rate 1-5 stars" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1,2,3,4,5].map(r => (
+                      <SelectItem key={r} value={r.toString()}>{r} ⭐</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Label>Comment</Label>
+                <Textarea 
+                  placeholder="Write your feedback here..." 
+                  value={feedbackComment} 
+                  onChange={(e) => setFeedbackComment(e.target.value)} 
+                />
+
+                <Button onClick={handleSubmitFeedback}>Submit Feedback</Button>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Certificates Tab */}
-          <TabsContent value="certificates" className="space-y-6">
+          {/* Certificates */}
+          <TabsContent value="certificates">
             <ParticipantCertificates />
           </TabsContent>
 
-          {/* Media Tab */}
-          <TabsContent value="media" className="space-y-6">
+          {/* Media */}
+          <TabsContent value="media">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="h-5 w-5" />
-                  Event Media & Gallery
-                </CardTitle>
-                <CardDescription>View and save event photos and videos</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Camera className="h-5 w-5" /> Event Media & Gallery</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Camera className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No media available</h3>
-                  <p className="text-gray-500 mb-4">Event galleries will appear here after attending events</p>
-                  <Button asChild>
-                    <Link href="/events">Browse Events</Link>
-                  </Button>
-                </div>
+                <p className="text-gray-500">Saved photos & videos will appear here.</p>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Account Management
-                </CardTitle>
-                <CardDescription>Manage your profile and account settings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Profile Information</h4>
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-600">Name: John Doe</p>
-                      <p className="text-sm text-gray-600">Email: john.doe@college.edu</p>
-                      <p className="text-sm text-gray-600">Department: Computer Science</p>
-                      <p className="text-sm text-gray-600">Enrollment: CS2024001</p>
-                    </div>
-                    <Button variant="outline" size="sm">Edit Profile</Button>
-                  </div>
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Account Settings</h4>
-                    <div className="space-y-2">
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Notification Preferences
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Bell className="h-4 w-4 mr-2" />
-                        Privacy Settings
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Social Integration
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Bookmarks */}
+          <TabsContent value="bookmarks">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {bookmarkedEvents.map((event) => (
+                <EventCard 
+                  key={event._id} 
+                  event={event} 
+                  userRole="participant"
+                  onCancel={() => toggleBookmark(event)}
+                />
+              ))}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
